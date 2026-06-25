@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ข้อมูลช่างแรงงานต่างด้าว — ABC Construction</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0f1c3f;--navy-mid:#1a2e5c;--navy-lt:#253d6e;
+  --blue:#1e4db7;--blue-lt:#3b6ee8;
+  --bg:#f2f5fb;--card:#fff;--border:#e2e8f2;
+  --text:#1a2744;--muted:#6b7a99;--muted-lt:#9aa5bd;
+  --green:#16a34a;--green-bg:#dcfce7;
+  --amber:#d97706;--amber-bg:#fef3c7;
+  --rose:#dc2626;--rose-bg:#fee2e2;
+  --r:12px;--sh:0 2px 12px rgba(15,28,63,.07);--sh-lg:0 8px 32px rgba(15,28,63,.14);
+  --sidebar:220px;
+}
+body{font-family:'Sarabun','Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);background:var(--navy);min-height:100vh;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;z-index:100}
+.sidebar-brand{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand-logo{width:40px;height:40px;background:linear-gradient(135deg,#c9a84c,#e8c96a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--navy);margin-bottom:8px}
+.brand-name{font-size:15px;font-weight:700;color:#fff;line-height:1.3}
+.brand-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}
+
+.sidebar-nav{padding:12px 0;flex:1}
+.nav-section{padding:6px 18px 4px;font-size:10px;font-weight:700;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.8px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:13.5px;color:rgba(255,255,255,.65);cursor:pointer;transition:all .15s;text-decoration:none;position:relative}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:rgba(59,110,232,.25);color:#fff}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#c9a84c;border-radius:0 2px 2px 0}
+.nav-icon{width:18px;height:18px;flex-shrink:0;opacity:.7}
+.nav-item.active .nav-icon,.nav-item:hover .nav-icon{opacity:1}
+.nav-badge{margin-left:auto;background:#e8547a;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:'Inter'}
+
+.sidebar-user{padding:14px 18px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600;color:#fff;line-height:1.3}
+.user-role{font-size:11px;color:rgba(255,255,255,.4)}
+
+/* ── MAIN AREA ── */
+.main-wrap{margin-left:var(--sidebar);flex:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── TOP BAR ── */
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.breadcrumb a{color:var(--blue);text-decoration:none;font-weight:500}
+.breadcrumb span{color:var(--muted-lt)}
+.topbar-actions{display:flex;gap:10px}
+.btn{border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-family:'Sarabun',sans-serif;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .18s}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-lt);transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,77,183,.3)}
+.btn-outline{background:#fff;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ── PAGE CONTENT ── */
+.page{padding:24px 28px 60px}
+.page-title{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted)}
+
+/* ── STAT CARDS ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:20px 0}
+.stat-card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:18px 20px;display:flex;align-items:center;gap:16px}
+.stat-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.stat-icon.blue{background:#eff6ff}
+.stat-icon.green{background:#f0fdf4}
+.stat-icon.amber{background:#fffbeb}
+.stat-icon.purple{background:#faf5ff}
+.stat-num{font-size:28px;font-weight:800;color:var(--navy);font-family:'Inter';line-height:1}
+.stat-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.stat-sub{font-size:11.5px;color:var(--muted)}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.search-box{flex:1;min-width:220px;position:relative}
+.search-box input{width:100%;padding:9px 12px 9px 36px;border-radius:8px;border:1px solid var(--border);font-family:'Sarabun',sans-serif;font-size:13px;color:var(--text);background:var(--bg);transition:border .2s}
+.search-box input:focus{outline:none;border-color:var(--blue);background:#fff}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted-lt);font-size:15px;pointer-events:none}
+.filter-sel{padding:9px 32px 9px 12px;border-radius:8px;border:1px solid var(--border);font-family:'Sarabun',sans-serif;font-size:13px;color:var(--text);background:var(--card);cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7a99' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;transition:border .2s}
+.filter-sel:focus{outline:none;border-color:var(--blue)}
+.filter-btn{padding:9px 16px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text);transition:all .15s;white-space:nowrap}
+.filter-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden}
+.worker-table{width:100%;border-collapse:collapse}
+.worker-table th{background:#f8faff;font-size:12px;font-weight:700;color:var(--muted);padding:12px 14px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap}
+.worker-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.worker-table tr:last-child td{border-bottom:none}
+.worker-table tbody tr:hover td{background:#fafbff}
+.worker-table td:first-child,.worker-table th:first-child{text-align:center;width:48px;color:var(--muted);font-family:'Inter';font-size:12px}
+
+.worker-avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:2px solid var(--border)}
+.worker-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.worker-name{font-weight:600;color:var(--navy);font-size:13.5px}
+.worker-name-en{font-size:11.5px;color:var(--muted);margin-top:1px}
+.flag{font-size:16px;margin-right:4px}
+
+.nat-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;background:var(--bg);color:var(--text)}
+
+.expiry-date{font-family:'Inter';font-size:13px;font-weight:600}
+.expiry-ok{color:var(--blue)}
+.expiry-warn{color:var(--amber)}
+.expiry-danger{color:var(--rose)}
+
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.status-active{background:var(--green-bg);color:var(--green)}
+.status-inactive{background:#f1f5f9;color:#64748b}
+.status-pending{background:var(--amber-bg);color:var(--amber)}
+.status-warn{background:var(--amber-bg);color:var(--amber)}
+.status-danger{background:var(--rose-bg);color:var(--rose)}
+
+.action-wrap{display:flex;align-items:center;gap:6px}
+.action-icon{width:30px;height:30px;border-radius:7px;border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);transition:all .15s}
+.action-icon:hover{border-color:var(--blue);color:var(--blue);background:#eff6ff}
+.action-icon.danger:hover{border-color:var(--rose);color:var(--rose);background:var(--rose-bg)}
+.action-more{position:relative}
+.action-more-menu{position:absolute;right:0;top:34px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--sh-lg);min-width:140px;z-index:200;display:none;overflow:hidden}
+.action-more-menu.open{display:block}
+.action-more-item{padding:10px 14px;font-size:13px;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:8px;transition:background .15s}
+.action-more-item:hover{background:var(--bg)}
+.action-more-item.danger{color:var(--rose)}
+
+/* ── LOAD MORE ── */
+.load-more{padding:16px;text-align:center;border-top:1px solid var(--border)}
+.load-more-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.load-more-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ── PAGINATION ── */
+.pagination{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.page-info{font-size:13px;color:var(--muted)}
+.page-btns{display:flex;gap:4px;align-items:center}
+.page-btn{width:32px;height:32px;border-radius:7px;border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-family:'Inter';font-weight:500;color:var(--muted);transition:all .15s}
+.page-btn:hover{border-color:var(--blue);color:var(--blue)}
+.page-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.page-btn:disabled{opacity:.4;cursor:not-allowed}
+.page-limit{padding:6px 10px;border-radius:7px;border:1px solid var(--border);font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(10,20,50,.45);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--card);border-radius:18px;width:100%;max-width:760px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.22)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:10;border-radius:18px 18px 0 0}
+.modal-head h2{font-size:17px;font-weight:700;color:var(--navy)}
+.modal-close{width:30px;height:30px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .2s}
+.modal-close:hover{background:var(--border)}
+.modal-body{padding:22px 24px}
+.modal-foot{padding:14px 24px 20px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border)}
+
+.form-section{margin-bottom:20px}
+.form-section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:12px;font-weight:600;color:var(--muted)}
+.form-group input,.form-group select,.form-group textarea{
+  padding:9px 12px;border-radius:8px;border:1px solid var(--border);
+  font-family:'Sarabun',sans-serif;font-size:13.5px;color:var(--text);
+  background:var(--bg);transition:border .18s
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--blue);background:#fff}
+.form-group.full{grid-column:span 2}
+.form-group.full3{grid-column:span 3}
+.required{color:var(--rose)}
+
+/* ── PHOTO UPLOAD ── */
+.photo-upload{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+.photo-preview{width:80px;height:80px;border-radius:50%;border:2px solid var(--border);object-fit:cover;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden}
+.photo-preview img{width:100%;height:100%;object-fit:cover}
+.photo-upload-btn{padding:8px 16px;border-radius:8px;border:1.5px dashed var(--border);background:var(--bg);font-family:'Sarabun',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;transition:all .15s}
+.photo-upload-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 22px;border-radius:10px;font-size:13.5px;box-shadow:var(--sh-lg);opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.success{background:#166534}
+.toast.error{background:#991b1b}
+
+/* ── VIEW MODAL ── */
+.view-modal .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.detail-item .detail-label{font-size:11.5px;color:var(--muted);font-weight:500;margin-bottom:3px}
+.detail-item .detail-value{font-size:14px;font-weight:600;color:var(--navy)}
+.detail-item.full{grid-column:span 2}
+.worker-header{display:flex;align-items:center;gap:16px;padding:16px 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.worker-header-avatar{width:72px;height:72px;border-radius:50%;border:3px solid var(--border);object-fit:cover;font-size:28px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.worker-header-avatar img{width:100%;height:100%;object-fit:cover}
+
+/* ── EMPTY STATE ── */
+.empty-state{padding:60px 20px;text-align:center;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:12px;opacity:.4}
+.empty-text{font-size:15px;font-weight:500}
+.empty-sub{font-size:13px;margin-top:4px}
+
+/* ── LOADING ── */
+.skeleton{background:linear-gradient(90deg,#f0f3f9 25%,#e4e8f2 50%,#f0f3f9 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">ABC</div>
+    <div class="brand-name">ABC Construction</div>
+    <div class="brand-sub">Co.,Ltd.</div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item" href="/">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      หน้าหลัก
+    </a>
+    <a class="nav-item active" href="/workers">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      ข้อมูลแรงงานต่างด้าว
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      ต่ออายุเอกสาร
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      แจ้งเข้า – ออกงาน
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      รายงาน
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+      เอกสาร
+    </a>
+    <a class="nav-item" href="#" id="notifNav">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      การแจ้งเตือน
+      <span class="nav-badge" id="notifBadge">3</span>
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      ตั้งค่า
+    </a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="user-avatar">👤</div>
+    <div>
+      <div class="user-name">แอดมินบริษัท</div>
+      <div class="user-role">ผู้ดูแลระบบ</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main-wrap">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div>
+      <div class="page-title">ข้อมูลช่างแรงงานต่างด้าวประจำบริษัท</div>
+      <div class="breadcrumb" style="margin-top:3px">
+        <a href="/">หน้าหลัก</a>
+        <span>›</span>
+        <span>ข้อมูลแรงงานต่างด้าว</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" onclick="exportCSV()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        นำออกข้อมูล
+      </button>
+      <button class="btn btn-primary" onclick="openAddModal()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        เพิ่มข้อมูลแรงงาน
+      </button>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- STATS -->
+    <div class="stats" id="statsRow">
+      <div class="stat-card">
+        <div class="stat-icon blue">👥</div>
+        <div>
+          <div class="stat-num" id="statTotal">—</div>
+          <div class="stat-label">แรงงานทั้งหมด</div>
+          <div class="stat-sub" id="statDate">ข้อมูล ณ วันนี้</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">🟢</div>
+        <div>
+          <div class="stat-num" id="statActive">—</div>
+          <div class="stat-label">ทำงานอยู่</div>
+          <div class="stat-sub" id="statActivePct">— % ของทั้งหมด</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber">📋</div>
+        <div>
+          <div class="stat-num" id="statExp30">—</div>
+          <div class="stat-label">เอกสารใกล้หมดอายุ</div>
+          <div class="stat-sub">ภายใน 30 วัน</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">📅</div>
+        <div>
+          <div class="stat-num" id="statExp60">—</div>
+          <div class="stat-label">ต่ออายุภายใน 60 วัน</div>
+          <div class="stat-sub">ภายใน 60 วัน</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="ค้นหาชื่อ, สัญชาติ, เลขที่บัตร" oninput="debounceSearch()"/>
+      </div>
+      <select class="filter-sel" id="filterNat" onchange="loadWorkers()">
+        <option value="">สัญชาติทั้งหมด</option>
+        <option>เมียนมา</option>
+        <option>กัมพูชา</option>
+        <option>ลาว</option>
+        <option>เวียดนาม</option>
+      </select>
+      <select class="filter-sel" id="filterStatus" onchange="loadWorkers()">
+        <option value="">สถานะทั้งหมด</option>
+        <option value="active">ทำงานอยู่</option>
+        <option value="inactive">ออกจากงาน</option>
+        <option value="pending">รอดำเนินการ</option>
+      </select>
+      <select class="filter-sel" id="filterPos" onchange="loadWorkers()">
+        <option value="">ตำแหน่งงานทั้งหมด</option>
+        <option>ช่างเชื่อม</option>
+        <option>ช่างปูน</option>
+        <option>ช่างไฟฟ้า</option>
+        <option>ช่างไม้</option>
+        <option>ผู้ช่วยช่าง</option>
+        <option>ช่างประปา</option>
+        <option>พนักงานทั่วไป</option>
+      </select>
+      <button class="filter-btn" onclick="clearFilters()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+        ตัวกรอง
+      </button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table class="worker-table">
+        <thead>
+          <tr>
+            <th>ลำดับ</th>
+            <th>รูปภาพ</th>
+            <th>ชื่อ – นามสกุล</th>
+            <th>สัญชาติ</th>
+            <th>ตำแหน่งงาน</th>
+            <th>เลขที่บัตรประจำตัวคนต่างด้าว</th>
+            <th>วันที่เริ่มงาน</th>
+            <th>เอกสารอนุญาตทำงาน (หมดอายุ)</th>
+            <th>สถานะ</th>
+            <th>สัตการ</th>
+          </tr>
+        </thead>
+        <tbody id="workersTbody">
+          <tr><td colspan="10" class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">กำลังโหลดข้อมูล...</div></td></tr>
+        </tbody>
+      </table>
+
+      <!-- PAGINATION -->
+      <div class="pagination" id="paginationWrap">
+        <div class="page-info" id="pageInfo">แสดง 0 รายการ</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="page-btns" id="pageBtns"></div>
+          <select class="page-limit" id="pageLimit" onchange="onLimitChange()">
+            <option value="10">10 / หน้า</option>
+            <option value="25">25 / หน้า</option>
+            <option value="50">50 / หน้า</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ MODAL: ADD / EDIT ═══ -->
+<div class="overlay" id="formOverlay" onclick="closeFormOverlay(event)">
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="modal-head">
+    <h2 id="formModalTitle">เพิ่มข้อมูลแรงงานใหม่</h2>
+    <button class="modal-close" onclick="closeFormModal()">✕</button>
+  </div>
+  <div class="modal-body">
+
+    <!-- รูปภาพ -->
+    <div class="form-section">
+      <div class="form-section-title">รูปภาพ</div>
+      <div class="photo-upload">
+        <div class="photo-preview" id="photoPreview">👤</div>
+        <div>
+          <input type="file" id="photoFile" accept="image/*" style="display:none" onchange="previewPhoto(this)"/>
+          <button class="photo-upload-btn" onclick="document.getElementById('photoFile').click()">📷 เลือกรูปภาพ</button>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px">JPG, PNG ขนาดไม่เกิน 5 MB</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ข้อมูลส่วนตัว -->
+    <div class="form-section">
+      <div class="form-section-title">ข้อมูลส่วนตัว</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ชื่อ (ภาษาไทย / ภาษาต้นทาง) <span class="required">*</span></label>
+          <input type="text" id="f_fname" placeholder="เช่น อ่อง โซ"/>
+        </div>
+        <div class="form-group">
+          <label>นามสกุล</label>
+          <input type="text" id="f_lname" placeholder="นามสกุล (ถ้ามี)"/>
+        </div>
+        <div class="form-group">
+          <label>ชื่อ (ภาษาอังกฤษ)</label>
+          <input type="text" id="f_fname_en" placeholder="First name"/>
+        </div>
+        <div class="form-group">
+          <label>นามสกุล (ภาษาอังกฤษ)</label>
+          <input type="text" id="f_lname_en" placeholder="Last name"/>
+        </div>
+        <div class="form-group">
+          <label>สัญชาติ <span class="required">*</span></label>
+          <select id="f_nationality">
+            <option value="">-- เลือกสัญชาติ --</option>
+            <option>เมียนมา</option>
+            <option>กัมพูชา</option>
+            <option>ลาว</option>
+            <option>เวียดนาม</option>
+            <option>อินโดนีเซีย</option>
+            <option>ฟิลิปปินส์</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>เบอร์โทรศัพท์</label>
+          <input type="tel" id="f_phone" placeholder="เช่น 081-234-5678"/>
+        </div>
+        <div class="form-group full">
+          <label>ที่อยู่ปัจจุบัน</label>
+          <input type="text" id="f_address" placeholder="ที่พักอาศัยในไทย"/>
+        </div>
+        <div class="form-group full">
+          <label>ผู้ติดต่อฉุกเฉิน</label>
+          <input type="text" id="f_emergency" placeholder="ชื่อ – เบอร์โทร ผู้ติดต่อฉุกเฉิน"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- ข้อมูลการจ้างงาน -->
+    <div class="form-section">
+      <div class="form-section-title">ข้อมูลการจ้างงาน</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ตำแหน่งงาน <span class="required">*</span></label>
+          <select id="f_position">
+            <option value="">-- เลือกตำแหน่ง --</option>
+            <option>ช่างเชื่อม</option>
+            <option>ช่างปูน</option>
+            <option>ช่างไฟฟ้า</option>
+            <option>ช่างไม้</option>
+            <option>ผู้ช่วยช่าง</option>
+            <option>ช่างประปา</option>
+            <option>พนักงานทั่วไป</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>สถานะการทำงาน</label>
+          <select id="f_status">
+            <option value="active">ทำงานอยู่</option>
+            <option value="inactive">ออกจากงาน</option>
+            <option value="pending">รอดำเนินการ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>วันที่เริ่มงาน <span class="required">*</span></label>
+          <input type="date" id="f_start_date"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- เอกสารราชการ -->
+    <div class="form-section">
+      <div class="form-section-title">เอกสารราชการ</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>เลขที่บัตรประจำตัวคนต่างด้าว <span class="required">*</span></label>
+          <input type="text" id="f_id_card" placeholder="เช่น MI 123456789"/>
+        </div>
+        <div class="form-group">
+          <label>วันหมดอายุใบอนุญาตทำงาน <span class="required">*</span></label>
+          <input type="date" id="f_work_permit_expiry"/>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeFormModal()">ยกเลิก</button>
+    <button class="btn btn-primary" onclick="saveWorker()">💾 บันทึกข้อมูล</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══ MODAL: VIEW ═══ -->
+<div class="overlay" id="viewOverlay" onclick="closeViewOverlay(event)">
+<div class="modal view-modal" onclick="event.stopPropagation()">
+  <div class="modal-head">
+    <h2>ข้อมูลแรงงาน</h2>
+    <button class="modal-close" onclick="closeViewModal()">✕</button>
+  </div>
+  <div class="modal-body" id="viewModalBody"></div>
+  <div class="modal-foot">
+    <button class="btn btn-outline" onclick="closeViewModal()">ปิด</button>
+    <button class="btn btn-primary" id="viewEditBtn">✏️ แก้ไขข้อมูล</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+const API = '';  // same origin
+let currentPage = 1;
+let totalPages = 1;
+let totalCount = 0;
+let editingId = null;
+let searchTimer = null;
+let viewingId = null;
+
+// ── Nationality flags ─────────────────────────────────────────────────────
+const FLAGS = { เมียนมา:'🇲🇲', กัมพูชา:'🇰🇭', ลาว:'🇱🇦', เวียดนาม:'🇻🇳', อินโดนีเซีย:'🇮🇩', ฟิลิปปินส์:'🇵🇭' };
+const flag = (nat) => FLAGS[nat] || '🏳';
+
+// ── Init ──────────────────────────────────────────────────────────────────
+async function init() {
+  await Promise.all([loadStats(), loadWorkers()]);
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await fetch(`${API}/api/stats`);
+    const d = await r.json();
+    document.getElementById('statTotal').textContent = d.total;
+    document.getElementById('statActive').textContent = d.active;
+    document.getElementById('statExp30').textContent = d.expiring30;
+    document.getElementById('statExp60').textContent = d.expiring60;
+    const pct = d.total ? ((d.active / d.total) * 100).toFixed(1) : 0;
+    document.getElementById('statActivePct').textContent = `${pct}% ของทั้งหมด`;
+    document.getElementById('statDate').textContent = `ข้อมูล ณ วันที่ ${fmtDateTH(d.updatedAt)}`;
+    // Update notification badge
+    const warns = d.expiring30 + d.expiring60;
+    document.getElementById('notifBadge').textContent = warns || '';
+    document.getElementById('notifBadge').style.display = warns ? '' : 'none';
+  } catch(e) { console.error(e); }
+}
+
+// ── Workers list ──────────────────────────────────────────────────────────
+async function loadWorkers(page = currentPage) {
+  currentPage = page;
+  const search = document.getElementById('searchInput').value.trim();
+  const nat    = document.getElementById('filterNat').value;
+  const status = document.getElementById('filterStatus').value;
+  const pos    = document.getElementById('filterPos').value;
+  const limit  = document.getElementById('pageLimit').value;
+
+  const params = new URLSearchParams({ page, limit });
+  if (search) params.set('search', search);
+  if (nat)    params.set('nationality', nat);
+  if (status) params.set('status', status);
+  if (pos)    params.set('position', pos);
+
+  try {
+    const r = await fetch(`${API}/api/workers?${params}`);
+    const d = await r.json();
+    totalCount = d.total;
+    totalPages = Math.ceil(d.total / parseInt(limit));
+    renderTable(d.data);
+    renderPagination(d.total, parseInt(limit));
+  } catch(e) {
+    document.getElementById('workersTbody').innerHTML =
+      `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--rose)">เชื่อมต่อ API ไม่ได้ — กรุณารัน server.js ก่อน</td></tr>`;
+  }
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('workersTbody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">ไม่พบข้อมูล</div><div class="empty-sub">ลองเปลี่ยนเงื่อนไขการค้นหา</div></div></td></tr>`;
+    return;
+  }
+
+  const offset = (currentPage - 1) * parseInt(document.getElementById('pageLimit').value);
+  tbody.innerHTML = rows.map((w, i) => {
+    const fullName = [w.first_name, w.last_name].filter(Boolean).join(' ');
+    const fullNameEn = [w.first_name_en, w.last_name_en].filter(Boolean).join(' ');
+    const days = daysUntil(w.work_permit_expiry);
+    const expiryClass = days < 0 ? 'expiry-danger' : days <= 30 ? 'expiry-danger' : days <= 60 ? 'expiry-warn' : 'expiry-ok';
+    const expiryBadge = days < 0
+      ? `<span class="status-badge status-danger">หมดอายุแล้ว</span>`
+      : days <= 30
+        ? `<span class="status-badge status-danger">ใกล้หมดอายุ</span>`
+        : days <= 60
+          ? `<span class="status-badge status-warn">ใกล้หมดอายุ</span>`
+          : `<span class="status-badge status-active">ทำงานอยู่</span>`;
+
+    const statusMap = { active:'<span class="status-badge status-active">ทำงานอยู่</span>', inactive:'<span class="status-badge status-inactive">ออกจากงาน</span>', pending:'<span class="status-badge status-pending">รอดำเนินการ</span>' };
+    const avatarContent = w.photo
+      ? `<img src="${w.photo}" alt="${fullName}"/>`
+      : `<span style="font-size:18px">👤</span>`;
+
+    return `<tr>
+      <td>${offset + i + 1}</td>
+      <td><div class="worker-avatar">${avatarContent}</div></td>
+      <td>
+        <div class="worker-name">นาย ${fullName}</div>
+        ${fullNameEn ? `<div class="worker-name-en">${fullNameEn}</div>` : ''}
+      </td>
+      <td><span class="nat-chip">${flag(w.nationality)} ${w.nationality}</span></td>
+      <td>${w.position}</td>
+      <td style="font-family:'Inter';font-weight:500">${w.id_card}</td>
+      <td style="font-family:'Inter'">${fmtDateTH(w.start_date)}</td>
+      <td>
+        <span class="${expiryClass}" style="font-family:'Inter';font-size:13px;font-weight:600">${fmtDateTH(w.work_permit_expiry)}</span>
+      </td>
+      <td>${expiryBadge}</td>
+      <td>
+        <div class="action-wrap">
+          <button class="action-icon" title="ดูข้อมูล" onclick="openViewModal(${w.id})">👁</button>
+          <button class="action-icon" title="แก้ไข" onclick="openEditModal(${w.id})">✏️</button>
+          <div class="action-more">
+            <button class="action-icon" title="เพิ่มเติม" onclick="toggleMore(this)">⋮</button>
+            <div class="action-more-menu">
+              <div class="action-more-item" onclick="openEditModal(${w.id});closeAllMenus()">✏️ แก้ไขข้อมูล</div>
+              <div class="action-more-item danger" onclick="deleteWorker(${w.id});closeAllMenus()">🗑 ลบข้อมูล</div>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPagination(total, limit) {
+  const start = (currentPage - 1) * limit + 1;
+  const end   = Math.min(currentPage * limit, total);
+  document.getElementById('pageInfo').textContent = `แสดง ${total ? start : 0} - ${end} จาก ${total} รายการ`;
+
+  const btns = document.getElementById('pageBtns');
+  const pages = Math.ceil(total / limit);
+  let html = `<button class="page-btn" ${currentPage<=1?'disabled':''} onclick="loadWorkers(${currentPage-1})">‹</button>`;
+
+  const range = [];
+  for (let p = 1; p <= pages; p++) {
+    if (p === 1 || p === pages || (p >= currentPage - 1 && p <= currentPage + 1)) range.push(p);
+    else if (range[range.length-1] !== '…') range.push('…');
+  }
+  range.forEach(p => {
+    if (p === '…') html += `<button class="page-btn" disabled>…</button>`;
+    else html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="loadWorkers(${p})">${p}</button>`;
+  });
+
+  html += `<button class="page-btn" ${currentPage>=pages?'disabled':''} onclick="loadWorkers(${currentPage+1})">›</button>`;
+  btns.innerHTML = html;
+}
+
+// ── Form Modal ────────────────────────────────────────────────────────────
+function openAddModal() {
+  editingId = null;
+  document.getElementById('formModalTitle').textContent = 'เพิ่มข้อมูลแรงงานใหม่';
+  clearForm();
+  document.getElementById('formOverlay').classList.add('open');
+}
+
+async function openEditModal(id) {
+  editingId = id;
+  document.getElementById('formModalTitle').textContent = 'แก้ไขข้อมูลแรงงาน';
+  try {
+    const r = await fetch(`${API}/api/workers/${id}`);
+    const w = await r.json();
+    document.getElementById('f_fname').value = w.first_name || '';
+    document.getElementById('f_lname').value = w.last_name || '';
+    document.getElementById('f_fname_en').value = w.first_name_en || '';
+    document.getElementById('f_lname_en').value = w.last_name_en || '';
+    document.getElementById('f_nationality').value = w.nationality || '';
+    document.getElementById('f_phone').value = w.phone || '';
+    document.getElementById('f_address').value = w.address || '';
+    document.getElementById('f_emergency').value = w.emergency_contact || '';
+    document.getElementById('f_position').value = w.position || '';
+    document.getElementById('f_status').value = w.status || 'active';
+    document.getElementById('f_start_date').value = w.start_date || '';
+    document.getElementById('f_id_card').value = w.id_card || '';
+    document.getElementById('f_work_permit_expiry').value = w.work_permit_expiry || '';
+    // photo preview
+    const prev = document.getElementById('photoPreview');
+    prev.innerHTML = w.photo ? `<img src="${w.photo}" alt="photo"/>` : '👤';
+    document.getElementById('formOverlay').classList.add('open');
+  } catch(e) { toast('โหลดข้อมูลล้มเหลว', 'error'); }
+}
+
+function closeFormModal() {
+  document.getElementById('formOverlay').classList.remove('open');
+  editingId = null;
+}
+function closeFormOverlay(e) { if (e.target === document.getElementById('formOverlay')) closeFormModal(); }
+
+function clearForm() {
+  ['f_fname','f_lname','f_fname_en','f_lname_en','f_phone','f_address','f_emergency','f_id_card'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('f_nationality').value = '';
+  document.getElementById('f_position').value = '';
+  document.getElementById('f_status').value = 'active';
+  document.getElementById('f_start_date').value = '';
+  document.getElementById('f_work_permit_expiry').value = '';
+  document.getElementById('photoPreview').innerHTML = '👤';
+  document.getElementById('photoFile').value = '';
+}
+
+function previewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => { document.getElementById('photoPreview').innerHTML = `<img src="${e.target.result}" alt="preview"/>`; };
+  reader.readAsDataURL(file);
+}
+
+async function saveWorker() {
+  const body = {
+    first_name: document.getElementById('f_fname').value.trim(),
+    last_name:  document.getElementById('f_lname').value.trim(),
+    first_name_en: document.getElementById('f_fname_en').value.trim(),
+    last_name_en:  document.getElementById('f_lname_en').value.trim(),
+    nationality: document.getElementById('f_nationality').value,
+    phone:    document.getElementById('f_phone').value.trim(),
+    address:  document.getElementById('f_address').value.trim(),
+    emergency_contact: document.getElementById('f_emergency').value.trim(),
+    position: document.getElementById('f_position').value,
+    status:   document.getElementById('f_status').value,
+    start_date: document.getElementById('f_start_date').value,
+    id_card:  document.getElementById('f_id_card').value.trim(),
+    work_permit_expiry: document.getElementById('f_work_permit_expiry').value,
+  };
+
+  if (!body.first_name || !body.nationality || !body.position || !body.id_card || !body.start_date || !body.work_permit_expiry) {
+    toast('กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน', 'error'); return;
+  }
+
+  try {
+    const url    = editingId ? `${API}/api/workers/${editingId}` : `${API}/api/workers`;
+    const method = editingId ? 'PUT' : 'POST';
+    const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) { toast(data.error || 'เกิดข้อผิดพลาด', 'error'); return; }
+
+    // upload photo if selected
+    const photoFile = document.getElementById('photoFile').files[0];
+    if (photoFile && data.id) {
+      const fd = new FormData();
+      fd.append('photo', photoFile);
+      await fetch(`${API}/api/workers/${data.id}/photo`, { method:'POST', body: fd });
+    }
+
+    closeFormModal();
+    await Promise.all([loadWorkers(), loadStats()]);
+    toast((editingId ? 'อัปเดต' : 'เพิ่ม') + 'ข้อมูลเรียบร้อย ✓', 'success');
+  } catch(e) { toast('เกิดข้อผิดพลาด: ' + e.message, 'error'); }
+}
+
+// ── View Modal ────────────────────────────────────────────────────────────
+async function openViewModal(id) {
+  viewingId = id;
+  try {
+    const r = await fetch(`${API}/api/workers/${id}`);
+    const w = await r.json();
+    const fullName = [w.first_name, w.last_name].filter(Boolean).join(' ');
+    const fullNameEn = [w.first_name_en, w.last_name_en].filter(Boolean).join(' ');
+    const days = daysUntil(w.work_permit_expiry);
+    const expiryNote = days < 0 ? `<span style="color:var(--rose)">(หมดอายุแล้ว ${Math.abs(days)} วัน)</span>`
+      : days <= 60 ? `<span style="color:var(--amber)">(เหลือ ${days} วัน)</span>`
+      : `<span style="color:var(--green)">(เหลือ ${days} วัน)</span>`;
+
+    const statusLabelMap = { active:'ทำงานอยู่', inactive:'ออกจากงาน', pending:'รอดำเนินการ' };
+    const avatarHtml = w.photo ? `<img src="${w.photo}" alt="${fullName}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>` : `<span style="font-size:28px">👤</span>`;
+
+    document.getElementById('viewModalBody').innerHTML = `
+      <div class="worker-header">
+        <div class="worker-header-avatar">${avatarHtml}</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--navy)">นาย ${fullName}</div>
+          ${fullNameEn ? `<div style="font-size:13px;color:var(--muted);margin-top:2px">${fullNameEn}</div>` : ''}
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <span class="nat-chip">${flag(w.nationality)} ${w.nationality}</span>
+            <span class="status-badge ${w.status==='active'?'status-active':w.status==='inactive'?'status-inactive':'status-pending'}">${statusLabelMap[w.status]||w.status}</span>
+            <span class="status-badge" style="background:var(--bg);color:var(--text)">${w.position}</span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">เลขที่บัตรประจำตัวคนต่างด้าว</div><div class="detail-value" style="font-family:'Inter'">${w.id_card}</div></div>
+        <div class="detail-item"><div class="detail-label">วันที่เริ่มงาน</div><div class="detail-value" style="font-family:'Inter'">${fmtDateTH(w.start_date)}</div></div>
+        <div class="detail-item"><div class="detail-label">ใบอนุญาตทำงานหมดอายุ</div><div class="detail-value" style="font-family:'Inter'">${fmtDateTH(w.work_permit_expiry)} ${expiryNote}</div></div>
+        <div class="detail-item"><div class="detail-label">เบอร์โทรศัพท์</div><div class="detail-value">${w.phone || '-'}</div></div>
+        <div class="detail-item full"><div class="detail-label">ที่อยู่ปัจจุบัน</div><div class="detail-value">${w.address || '-'}</div></div>
+        <div class="detail-item full"><div class="detail-label">ผู้ติดต่อฉุกเฉิน</div><div class="detail-value">${w.emergency_contact || '-'}</div></div>
+        <div class="detail-item"><div class="detail-label">บันทึกข้อมูลเมื่อ</div><div class="detail-value" style="font-size:12px;font-weight:400;color:var(--muted)">${w.created_at}</div></div>
+        <div class="detail-item"><div class="detail-label">อัปเดตล่าสุด</div><div class="detail-value" style="font-size:12px;font-weight:400;color:var(--muted)">${w.updated_at}</div></div>
+      </div>`;
+
+    document.getElementById('viewEditBtn').onclick = () => { closeViewModal(); openEditModal(id); };
+    document.getElementById('viewOverlay').classList.add('open');
+  } catch(e) { toast('โหลดข้อมูลล้มเหลว', 'error'); }
+}
+
+function closeViewModal() { document.getElementById('viewOverlay').classList.remove('open'); viewingId = null; }
+function closeViewOverlay(e) { if (e.target === document.getElementById('viewOverlay')) closeViewModal(); }
+
+// ── Delete ────────────────────────────────────────────────────────────────
+async function deleteWorker(id) {
+  if (!confirm('ยืนยันการลบข้อมูลแรงงานนี้?')) return;
+  try {
+    const r = await fetch(`${API}/api/workers/${id}`, { method:'DELETE' });
+    if (!r.ok) { const d = await r.json(); toast(d.error || 'ลบล้มเหลว', 'error'); return; }
+    await Promise.all([loadWorkers(), loadStats()]);
+    toast('ลบข้อมูลเรียบร้อย', 'success');
+  } catch(e) { toast('เกิดข้อผิดพลาด', 'error'); }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function daysUntil(dateStr) {
+  return Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
+}
+
+function fmtDateTH(dateStr) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr;
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { currentPage = 1; loadWorkers(); }, 350);
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterNat').value = '';
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterPos').value = '';
+  currentPage = 1;
+  loadWorkers();
+}
+
+function onLimitChange() { currentPage = 1; loadWorkers(); }
+
+function toggleMore(btn) {
+  closeAllMenus();
+  const menu = btn.nextElementSibling;
+  menu.classList.toggle('open');
+  setTimeout(() => { document.addEventListener('click', closeAllMenus, { once: true }); }, 0);
+}
+
+function closeAllMenus() {
+  document.querySelectorAll('.action-more-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+function toast(msg, type = '') {
+  const el = document.getElementById('toastEl');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function exportCSV() {
+  const headers = ['ลำดับ','ชื่อ','นามสกุล','ชื่อ(ENG)','นามสกุล(ENG)','สัญชาติ','ตำแหน่ง','เลขที่บัตร','วันเริ่มงาน','หมดอายุ','สถานะ','โทร'];
+  fetch(`${API}/api/workers?limit=9999`).then(r=>r.json()).then(d=>{
+    const rows = d.data.map((w,i)=>[i+1,w.first_name,w.last_name,w.first_name_en,w.last_name_en,w.nationality,w.position,w.id_card,w.start_date,w.work_permit_expiry,w.status,w.phone]);
+    const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `workers_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    toast('ดาวน์โหลด CSV เรียบร้อย ✓', 'success');
+  }).catch(()=>toast('ส่งออกล้มเหลว','error'));
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

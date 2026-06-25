@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ข้อความ — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+.chat-wrap{max-width:1100px;margin:0 auto;padding:24px;height:calc(100vh - 66px)}
+.chat-grid{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - 130px);background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-sm)}
+/* sidebar */
+.chat-side{border-right:1px solid var(--line);overflow-y:auto}
+.chat-side-head{padding:18px;border-bottom:1px solid var(--line);font-weight:700;font-size:16px}
+.conv{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;border-bottom:1px solid var(--line-lt);transition:background .15s}
+.conv:hover{background:var(--bg)}
+.conv.active{background:var(--primary-50)}
+.conv-avatar{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0}
+.conv-info{flex:1;min-width:0}
+.conv-info strong{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-info span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+/* main */
+.chat-main{display:flex;flex-direction:column}
+.chat-head{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.chat-head-avatar{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.chat-head-info strong{font-size:15px;display:block}
+.chat-head-info span{font-size:12px;color:var(--green)}
+.chat-head-actions{margin-left:auto;display:flex;gap:8px}
+.chat-body{flex:1;overflow-y:auto;padding:22px;background:var(--bg);display:flex;flex-direction:column;gap:12px}
+.msg{max-width:70%;padding:11px 15px;border-radius:16px;font-size:14px;line-height:1.5}
+.msg.owner{align-self:flex-end;background:var(--grad);color:#fff;border-bottom-right-radius:4px}
+.msg.contractor{align-self:flex-start;background:var(--white);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg-time{font-size:10px;opacity:.6;margin-top:3px}
+.chat-foot{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.chat-input{flex:1;padding:11px 16px;border:1.5px solid var(--line);border-radius:24px;font-family:'Sarabun';font-size:14px;outline:none}
+.chat-input:focus{border-color:var(--primary)}
+.chat-send{width:44px;height:44px;border-radius:50%;border:none;background:var(--grad);color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;box-shadow:var(--sh-blue)}
+.chat-tools{display:flex;gap:6px}
+.tool-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:16px}
+.empty-chat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted)}
+@media(max-width:760px){.chat-grid{grid-template-columns:1fr}.chat-side{display:none}}
+</style>
+</head>
+<body data-page="chat">
+<div id="nav"></div>
+<div class="chat-wrap">
+  <div class="chat-grid">
+    <div class="chat-side">
+      <div class="chat-side-head">💬 ข้อความ</div>
+      <div id="convList"></div>
+    </div>
+    <div class="chat-main" id="main">
+      <div class="empty-chat"><div style="font-size:48px">💬</div><p>เลือกการสนทนา</p></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+let contractors=[], activeId=null;
+
+(async()=>{
+  contractors = await API.get('/contractors?sort=rating');
+  const pre = new URLSearchParams(location.search).get('c');
+  renderConvs();
+  openChat(pre? +pre : contractors[0].id);
+})();
+
+function renderConvs(){
+  document.getElementById('convList').innerHTML = contractors.map(c=>`
+    <div class="conv ${c.id===activeId?'active':''}" id="conv_${c.id}" onclick="openChat(${c.id})">
+      <div class="conv-avatar" style="background:${colorOf(c.id)}">${initials(c.name)}</div>
+      <div class="conv-info"><strong>${c.name}</strong><span>${c.tagline}</span></div>
+    </div>`).join('');
+}
+
+async function openChat(id){
+  activeId=id;
+  renderConvs();
+  const c = contractors.find(x=>x.id===id);
+  let msgs = await API.get('/messages/'+id);
+  // seed คำทักทายถ้ายังไม่มี
+  if(!msgs.length){
+    await API.post('/messages',{contractor_id:id,sender:'contractor',body:`สวัสดีครับ ผมจาก${c.name} ยินดีให้คำปรึกษาครับ มีโครงการแบบไหนให้ช่วยดูได้เลยครับ 😊`});
+    msgs = await API.get('/messages/'+id);
+  }
+  document.getElementById('main').innerHTML=`
+    <div class="chat-head">
+      <div class="chat-head-avatar" style="background:${colorOf(c.id)}">${initials(c.name)}</div>
+      <div class="chat-head-info"><strong>${c.name}</strong><span>● ออนไลน์</span></div>
+      <div class="chat-head-actions">
+        <a class="btn btn-ghost btn-sm" href="/meeting?c=${c.id}">📅 นัดคุย</a>
+        <a class="btn btn-soft btn-sm" href="/rfq?c=${c.id}">ขอใบเสนอราคา</a>
+      </div>
+    </div>
+    <div class="chat-body" id="body"></div>
+    <div class="chat-foot">
+      <div class="chat-tools">
+        <button class="tool-btn" onclick="attach('📷 รูปภาพ')" title="รูปภาพ">📷</button>
+        <button class="tool-btn" onclick="attach('📄 BOQ.pdf')" title="ไฟล์">📎</button>
+      </div>
+      <input class="chat-input" id="inp" placeholder="พิมพ์ข้อความ..." onkeydown="if(event.key==='Enter')send()"/>
+      <button class="chat-send" onclick="send()">➤</button>
+    </div>`;
+  renderMsgs(msgs);
+}
+
+function renderMsgs(msgs){
+  const body=document.getElementById('body');
+  body.innerHTML = msgs.map(m=>`
+    <div class="msg ${m.sender}">${m.attachment?`<div style="font-weight:600">${m.attachment}</div>`:''}${m.body}
+      <div class="msg-time">${(m.created_at||'').slice(11,16)}</div></div>`).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+async function send(){
+  const inp=document.getElementById('inp'); const text=inp.value.trim();
+  if(!text)return; inp.value='';
+  await API.post('/messages',{contractor_id:activeId,sender:'owner',body:text});
+  setTimeout(async()=>{ renderMsgs(await API.get('/messages/'+activeId)); }, 700);
+  renderMsgs(await API.get('/messages/'+activeId));
+}
+async function attach(label){
+  await API.post('/messages',{contractor_id:activeId,sender:'owner',body:'',attachment:label});
+  renderMsgs(await API.get('/messages/'+activeId));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>สร้างโปรเจกต์ — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+.wizard-wrap{max-width:840px;margin:0 auto;padding:36px 24px 80px}
+/* progress */
+.steps-bar{display:flex;align-items:center;margin-bottom:36px}
+.sbar-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
+.sbar-dot{width:38px;height:38px;border-radius:50%;background:var(--white);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Inter';color:var(--muted-lt);z-index:2;transition:all .3s;font-size:15px}
+.sbar-item.active .sbar-dot{background:var(--grad);border-color:transparent;color:#fff;box-shadow:var(--sh-blue)}
+.sbar-item.done .sbar-dot{background:var(--green);border-color:transparent;color:#fff}
+.sbar-label{font-size:12px;margin-top:8px;color:var(--muted);font-weight:500;text-align:center}
+.sbar-item.active .sbar-label{color:var(--primary);font-weight:600}
+.sbar-line{position:absolute;top:19px;left:50%;width:100%;height:2px;background:var(--line);z-index:1}
+.sbar-item.done .sbar-line{background:var(--green)}
+.sbar-item:last-child .sbar-line{display:none}
+
+.wcard{background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--sh);padding:38px}
+.step-panel{display:none;animation:fadeUp .4s ease both}
+.step-panel.active{display:block}
+.step-title{font-size:24px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.step-desc{font-size:15px;color:var(--muted);margin-bottom:28px}
+
+/* option cards */
+.opt-grid{display:grid;gap:14px}
+.opt-grid.cols-2{grid-template-columns:1fr 1fr}
+.opt-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.opt{border:2px solid var(--line);border-radius:var(--r);padding:20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px;background:var(--white)}
+.opt:hover{border-color:var(--primary-light);background:var(--primary-50)}
+.opt.sel{border-color:var(--primary);background:var(--primary-50);box-shadow:0 0 0 4px var(--primary-50)}
+.opt-ico{font-size:28px;flex-shrink:0}
+.opt-txt strong{display:block;font-size:15.5px;color:var(--ink)}
+.opt-txt span{font-size:13px;color:var(--muted)}
+.opt-check{margin-left:auto;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;flex-shrink:0;transition:all .2s}
+.opt.sel .opt-check{background:var(--primary);border-color:var(--primary)}
+
+.style-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.style-opt{border:2px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all .2s}
+.style-opt:hover{border-color:var(--primary-light)}
+.style-opt.sel{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-50)}
+.style-thumb{height:90px;display:flex;align-items:center;justify-content:center;font-size:34px}
+.style-name{padding:10px;text-align:center;font-size:14px;font-weight:600;color:var(--ink)}
+
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* file drop */
+.dropzone{border:2px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:all .2s}
+.dropzone:hover{border-color:var(--primary);background:var(--primary-50)}
+.dropzone .ico{font-size:34px;margin-bottom:8px}
+.file-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.file-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:9px;font-size:13px}
+.file-item .x{margin-left:auto;cursor:pointer;color:var(--muted);font-weight:700}
+
+.wiz-nav{display:flex;justify-content:space-between;margin-top:32px;gap:14px}
+
+@media(max-width:680px){
+  .opt-grid.cols-2,.opt-grid.cols-3,.style-grid{grid-template-columns:1fr 1fr}
+  .field-row,.field-row-3{grid-template-columns:1fr}
+  .sbar-label{display:none}
+  .wcard{padding:24px}
+}
+</style>
+</head>
+<body data-page="create">
+<div id="nav"></div>
+
+<div class="wizard-wrap">
+  <!-- progress -->
+  <div class="steps-bar" id="stepsBar"></div>
+
+  <div class="wcard">
+    <!-- STEP 1: work type -->
+    <div class="step-panel active" data-step="1">
+      <div class="step-title">ประเภทงานที่ต้องการ</div>
+      <div class="step-desc">เลือกประเภทงานที่คุณต้องการดำเนินการ</div>
+      <div class="opt-grid cols-2" id="workTypes"></div>
+    </div>
+
+    <!-- STEP 2: budget -->
+    <div class="step-panel" data-step="2">
+      <div class="step-title">งบประมาณโครงการ</div>
+      <div class="step-desc">ช่วงงบประมาณที่คุณวางไว้ (โดยประมาณ)</div>
+      <div class="opt-grid" id="budgets"></div>
+    </div>
+
+    <!-- STEP 3: location -->
+    <div class="step-panel" data-step="3">
+      <div class="step-title">พื้นที่ก่อสร้าง</div>
+      <div class="step-desc">ระบุทำเลโครงการเพื่อจับคู่ผู้รับเหมาในพื้นที่ใกล้เคียง</div>
+      <div class="field-row">
+        <div class="field"><label>จังหวัด</label>
+          <select class="select" id="province">
+            <option value="">-- เลือกจังหวัด --</option>
+            <option>กรุงเทพมหานคร</option><option>นนทบุรี</option><option>ปทุมธานี</option>
+            <option>สมุทรปราการ</option><option>ชลบุรี</option><option>เชียงใหม่</option>
+            <option>นครราชสีมา</option><option>ภูเก็ต</option>
+          </select>
+        </div>
+        <div class="field"><label>อำเภอ / เขต</label>
+          <input class="input" id="district" placeholder="เช่น บางกะปิ"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>ตำแหน่ง GPS (ไม่บังคับ)</label>
+        <button class="btn btn-soft" type="button" onclick="getGPS()" id="gpsBtn">📍 ใช้ตำแหน่งปัจจุบัน</button>
+        <span class="hint" id="gpsHint"></span>
+      </div>
+    </div>
+
+    <!-- STEP 4: style -->
+    <div class="step-panel" data-step="4">
+      <div class="step-title">สไตล์บ้านที่ชอบ</div>
+      <div class="step-desc">เลือกสไตล์ที่ตรงกับความต้องการของคุณ</div>
+      <div class="style-grid" id="styles"></div>
+    </div>
+
+    <!-- STEP 5: details -->
+    <div class="step-panel" data-step="5">
+      <div class="step-title">รายละเอียดเพิ่มเติม</div>
+      <div class="step-desc">ข้อมูลเหล่านี้ช่วยให้ผู้รับเหมาประเมินงานได้แม่นยำขึ้น</div>
+      <div class="field-row-3">
+        <div class="field"><label>จำนวนชั้น</label><input class="input num" type="number" id="floors" value="1" min="1"/></div>
+        <div class="field"><label>พื้นที่ใช้สอย (ตร.ม.)</label><input class="input num" type="number" id="area" placeholder="เช่น 250"/></div>
+        <div class="field"><label>ห้องนอน</label><input class="input num" type="number" id="bedrooms" placeholder="เช่น 3"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>ห้องน้ำ</label><input class="input num" type="number" id="bathrooms" placeholder="เช่น 2"/></div>
+        <div class="field"><label>ชื่อผู้ติดต่อ</label><input class="input" id="ownerName" placeholder="ชื่อ-นามสกุล"/></div>
+      </div>
+      <div class="field"><label>รายละเอียดโครงการ</label>
+        <textarea class="textarea" id="detail" placeholder="อธิบายความต้องการเพิ่มเติม เช่น สไตล์การตกแต่ง วัสดุที่ชอบ ฯลฯ"></textarea>
+      </div>
+      <div class="field"><label>แนบไฟล์ (แบบบ้าน / เอกสาร)</label>
+        <div class="dropzone" onclick="document.getElementById('fileInput').click()">
+          <div class="ico">📎</div>
+          <div style="font-weight:600;font-size:14px">คลิกเพื่อแนบไฟล์</div>
+          <div class="hint">รองรับ PDF, DWG, RVT, IFC, JPG, PNG (สูงสุด 20MB)</div>
+        </div>
+        <input type="file" id="fileInput" multiple accept=".pdf,.dwg,.rvt,.ifc,.jpg,.jpeg,.png" style="display:none" onchange="addFiles(this.files)"/>
+        <div class="file-list" id="fileList"></div>
+      </div>
+    </div>
+
+    <!-- nav -->
+    <div class="wiz-nav">
+      <button class="btn btn-ghost" id="prevBtn" onclick="prevStep()" style="visibility:hidden">← ย้อนกลับ</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">ถัดไป →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+const STEPS = ['ประเภทงาน','งบประมาณ','พื้นที่','สไตล์','รายละเอียด'];
+const WORK_TYPES = [
+  {v:'สร้างบ้านใหม่', ico:'🏠', d:'ก่อสร้างบ้านหลังใหม่ทั้งหลัง'},
+  {v:'ต่อเติม',       ico:'🧱', d:'ต่อเติมพื้นที่จากของเดิม'},
+  {v:'รีโนเวท',       ico:'🔨', d:'ปรับปรุง / รีโนเวทบ้านเก่า'},
+  {v:'ตกแต่งภายใน',   ico:'🛋️', d:'ออกแบบและตกแต่งภายใน'},
+  {v:'งานระบบ',       ico:'⚙️', d:'ไฟฟ้า ประปา ปรับอากาศ'},
+];
+const BUDGETS = [
+  {v:[0,500000],        l:'ต่ำกว่า 500,000 บาท'},
+  {v:[500000,1000000],  l:'500,000 – 1,000,000 บาท'},
+  {v:[1000000,3000000], l:'1,000,000 – 3,000,000 บาท'},
+  {v:[3000000,5000000], l:'3,000,000 – 5,000,000 บาท'},
+  {v:[5000000,50000000],l:'มากกว่า 5,000,000 บาท'},
+];
+const STYLES = [
+  {v:'Modern',ico:'🏢'},{v:'Minimal',ico:'⬜'},{v:'Nordic',ico:'🌲'},
+  {v:'Luxury',ico:'💎'},{v:'Tropical',ico:'🌴'},{v:'Loft',ico:'🧰'},
+];
+
+let cur = 1;
+const data = { work_type:null, budget:null, style:null, lat:null, lng:null, files:[] };
+
+// progress bar
+function renderBar(){
+  document.getElementById('stepsBar').innerHTML = STEPS.map((s,i)=>{
+    const n=i+1; const cls = n<cur?'done':n===cur?'active':'';
+    return `<div class="sbar-item ${cls}"><div class="sbar-line"></div><div class="sbar-dot">${n<cur?'✓':n}</div><div class="sbar-label">${s}</div></div>`;
+  }).join('');
+}
+
+// step 1
+document.getElementById('workTypes').innerHTML = WORK_TYPES.map(w=>`
+  <div class="opt" onclick="pick(this,'work_type','${w.v}')">
+    <div class="opt-ico">${w.ico}</div>
+    <div class="opt-txt"><strong>${w.v}</strong><span>${w.d}</span></div>
+    <div class="opt-check">✓</div>
+  </div>`).join('');
+// step 2
+document.getElementById('budgets').innerHTML = BUDGETS.map((b,i)=>`
+  <div class="opt" onclick="pickBudget(this,${i})">
+    <div class="opt-ico">💰</div>
+    <div class="opt-txt"><strong>${b.l}</strong></div>
+    <div class="opt-check">✓</div>
+  </div>`).join('');
+// step 4
+document.getElementById('styles').innerHTML = STYLES.map((s,i)=>{
+  const colors=['#dbeafe','#e0e7ff','#dcfce7','#fef3c7','#d1fae5','#f3e8ff'];
+  return `<div class="style-opt" onclick="pick(this,'style','${s.v}')">
+    <div class="style-thumb" style="background:${colors[i]}">${s.ico}</div>
+    <div class="style-name">${s.v}</div>
+  </div>`;
+}).join('');
+
+function pick(el, key, val){
+  el.parentElement.querySelectorAll('.opt,.style-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel'); data[key]=val;
+}
+function pickBudget(el, i){
+  el.parentElement.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel'); data.budget=BUDGETS[i].v;
+}
+
+function getGPS(){
+  if(!navigator.geolocation){toast('เบราว์เซอร์ไม่รองรับ GPS');return;}
+  document.getElementById('gpsBtn').textContent='⏳ กำลังระบุตำแหน่ง...';
+  navigator.geolocation.getCurrentPosition(p=>{
+    data.lat=p.coords.latitude; data.lng=p.coords.longitude;
+    document.getElementById('gpsBtn').textContent='✅ ระบุตำแหน่งแล้ว';
+    document.getElementById('gpsHint').textContent=`${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}`;
+  }, ()=>{ document.getElementById('gpsBtn').textContent='📍 ใช้ตำแหน่งปัจจุบัน'; toast('ไม่สามารถระบุตำแหน่งได้'); });
+}
+
+function addFiles(files){
+  [...files].forEach(f=> data.files.push({name:f.name, size:f.size}));
+  renderFiles();
+}
+function renderFiles(){
+  document.getElementById('fileList').innerHTML = data.files.map((f,i)=>`
+    <div class="file-item">📄 ${f.name} <span class="hint">${(f.size/1024).toFixed(0)} KB</span>
+      <span class="x" onclick="data.files.splice(${i},1);renderFiles()">✕</span></div>`).join('');
+}
+
+function showStep(n){
+  document.querySelectorAll('.step-panel').forEach(p=>p.classList.toggle('active', +p.dataset.step===n));
+  document.getElementById('prevBtn').style.visibility = n===1?'hidden':'visible';
+  document.getElementById('nextBtn').textContent = n===5?'🚀 เริ่มจับคู่ผู้รับเหมา':'ถัดไป →';
+  renderBar();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function validate(){
+  if(cur===1 && !data.work_type){toast('กรุณาเลือกประเภทงาน');return false;}
+  if(cur===2 && !data.budget){toast('กรุณาเลือกงบประมาณ');return false;}
+  if(cur===4 && !data.style){toast('กรุณาเลือกสไตล์บ้าน');return false;}
+  return true;
+}
+function nextStep(){
+  if(!validate())return;
+  if(cur<5){ cur++; showStep(cur); return; }
+  submit();
+}
+function prevStep(){ if(cur>1){cur--;showStep(cur);} }
+
+async function submit(){
+  const btn=document.getElementById('nextBtn');
+  btn.textContent='⏳ กำลังบันทึก...'; btn.disabled=true;
+  const payload = {
+    owner_name: document.getElementById('ownerName').value || 'เจ้าของบ้าน',
+    work_type: data.work_type,
+    budget_min: data.budget[0], budget_max: data.budget[1],
+    province: document.getElementById('province').value,
+    district: document.getElementById('district').value,
+    lat: data.lat || provinceLatLng(document.getElementById('province').value).lat,
+    lng: data.lng || provinceLatLng(document.getElementById('province').value).lng,
+    style: data.style,
+    floors: +document.getElementById('floors').value || 1,
+    area: +document.getElementById('area').value || 0,
+    bedrooms: +document.getElementById('bedrooms').value || 0,
+    bathrooms: +document.getElementById('bathrooms').value || 0,
+    detail: document.getElementById('detail').value,
+    files: data.files,
+  };
+  try{
+    const proj = await API.post('/projects', payload);
+    Store.set('projectId', proj.id);
+    Store.set('project', proj);
+    location.href = '/results';
+  }catch(e){ toast(e.message,'error'); btn.textContent='🚀 เริ่มจับคู่ผู้รับเหมา'; btn.disabled=false; }
+}
+
+// rough province centroids (สำหรับคำนวณระยะทางเมื่อไม่ได้ใช้ GPS)
+function provinceLatLng(p){
+  const map={
+    'กรุงเทพมหานคร':[13.7563,100.5018],'นนทบุรี':[13.86,100.51],'ปทุมธานี':[14.02,100.53],
+    'สมุทรปราการ':[13.6,100.6],'ชลบุรี':[13.36,100.98],'เชียงใหม่':[18.79,98.99],
+    'นครราชสีมา':[14.97,102.1],'ภูเก็ต':[7.88,98.39]
+  };
+  const v=map[p]||[13.7563,100.5018]; return {lat:v[0],lng:v[1]};
+}
+
+renderBar();
+</script>
+</body>
+</html>

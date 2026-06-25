@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>โปรไฟล์ผู้รับเหมา — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+.pf-wrap{max-width:1100px;margin:0 auto;padding:24px 24px 80px}
+.pf-cover{height:200px;border-radius:var(--r-lg);position:relative;display:flex;align-items:flex-end;padding:24px;overflow:hidden}
+.pf-cover::after{content:'🏗️';position:absolute;top:50%;right:40px;transform:translateY(-50%);font-size:90px;opacity:.18}
+.pf-head{display:flex;gap:22px;align-items:flex-end;margin-top:-50px;padding:0 24px;position:relative;z-index:2}
+.pf-avatar{width:108px;height:108px;border-radius:24px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:36px;font-family:'Inter';border:4px solid #fff;box-shadow:var(--sh);flex-shrink:0}
+.pf-head-info{flex:1;padding-bottom:6px}
+.pf-name{font-size:26px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pf-tagline{font-size:15px;color:var(--muted);margin-top:4px}
+.pf-actions{display:flex;gap:10px;padding-bottom:6px;flex-wrap:wrap}
+
+.pf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:26px 0}
+.pf-stat{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px;text-align:center}
+.pf-stat b{display:block;font-size:26px;font-weight:800;font-family:'Inter';color:var(--primary)}
+.pf-stat span{font-size:12.5px;color:var(--muted)}
+
+.pf-grid{display:grid;grid-template-columns:1fr 320px;gap:24px}
+.pf-section{margin-bottom:28px}
+.pf-section h3{font-size:18px;font-weight:700;color:var(--ink);margin-bottom:16px;display:flex;align-items:center;gap:9px}
+
+/* portfolio */
+.folio-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.folio{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);cursor:pointer;transition:all .2s}
+.folio:hover{transform:translateY(-3px);box-shadow:var(--sh)}
+.folio-img{height:130px;display:flex;align-items:center;justify-content:center;font-size:40px}
+.folio-body{padding:14px}
+.folio-body strong{font-size:14.5px;color:var(--ink);display:block}
+.folio-meta{font-size:12.5px;color:var(--muted);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap}
+
+/* reviews */
+.review{padding:16px 0;border-bottom:1px solid var(--line)}
+.review:last-child{border:none}
+.review-head{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.rv-avatar{width:38px;height:38px;border-radius:50%;background:var(--primary-50);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.review-body{font-size:14px;color:var(--text)}
+.rv-cats{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+
+/* sidebar */
+.side-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;margin-bottom:18px}
+.side-card h4{font-size:15px;font-weight:700;margin-bottom:14px;color:var(--ink)}
+.info-line{display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px;border-bottom:1px solid var(--line-lt)}
+.info-line:last-child{border:none}
+.info-line span{color:var(--muted)}
+.info-line b{color:var(--ink);font-weight:600}
+.doc-item{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:13.5px;border-bottom:1px solid var(--line-lt)}
+.doc-item:last-child{border:none}
+.doc-ico{width:34px;height:34px;border-radius:9px;background:var(--primary-50);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.team-item{text-align:center;padding:14px;background:var(--bg);border-radius:var(--r)}
+.team-item b{display:block;font-size:22px;font-weight:800;font-family:'Inter';color:var(--ink)}
+.team-item span{font-size:12px;color:var(--muted)}
+
+@media(max-width:840px){
+  .pf-grid{grid-template-columns:1fr}
+  .pf-stats{grid-template-columns:1fr 1fr}
+  .folio-grid{grid-template-columns:1fr}
+  .pf-head{flex-direction:column;align-items:center;text-align:center}
+}
+</style>
+</head>
+<body data-page="results">
+<div id="nav"></div>
+
+<div class="pf-wrap" id="pf"><div class="ai-loading" style="text-align:center;padding:80px"><div class="spinner" style="margin:0 auto"></div></div></div>
+
+<script src="/js/common.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const id = params.get('id');
+
+const CATS=[['quality','คุณภาพงาน'],['punctuality','ตรงเวลา'],['communication','การสื่อสาร'],['value','ความคุ้มค่า']];
+
+(async () => {
+  if(!id){ location.href='/results'; return; }
+  const c = await API.get('/contractors/'+id);
+  const col = colorOf(c.id);
+  const folioIcons=['🏠','🏡','🏢','🛋️','🔨','🌴'];
+
+  document.getElementById('pf').innerHTML = `
+    <div class="pf-cover" style="background:linear-gradient(135deg,${col},${col}aa)">
+      <span class="badge" style="background:rgba(255,255,255,.92);color:${col}">${c.work_types.join(' · ')}</span>
+    </div>
+    <div class="pf-head">
+      <div class="pf-avatar" style="background:${col}">${initials(c.name)}</div>
+      <div class="pf-head-info">
+        <div class="pf-name">${c.name} ${c.verified?'<span class="badge badge-verified">✓ ตรวจสอบแล้ว</span>':''}</div>
+        <div class="pf-tagline">${c.tagline}</div>
+        <div class="mt-2">${stars(c.rating)} <b class="num">${c.rating}</b> <span style="color:var(--muted);font-size:13px">(${c.review_count} รีวิว)</span></div>
+      </div>
+      <div class="pf-actions">
+        <a class="btn btn-soft" href="/chat?c=${c.id}">💬 แชต</a>
+        <a class="btn btn-ghost" href="/meeting?c=${c.id}">📅 นัดคุย</a>
+        <a class="btn btn-primary" href="/rfq?c=${c.id}">ขอใบเสนอราคา</a>
+      </div>
+    </div>
+
+    <div class="pf-stats">
+      <div class="pf-stat"><b class="num">${c.projects_done}</b><span>โครงการสำเร็จ</span></div>
+      <div class="pf-stat"><b class="num">${c.rating}</b><span>คะแนนรีวิว</span></div>
+      <div class="pf-stat"><b class="num">${new Date().getFullYear()-c.founded_year}</b><span>ปีประสบการณ์</span></div>
+      <div class="pf-stat"><b class="num">${c.team_size}</b><span>ทีมงาน</span></div>
+    </div>
+
+    <div class="pf-grid">
+      <div>
+        <div class="pf-section">
+          <h3>📋 เกี่ยวกับบริษัท</h3>
+          <p style="font-size:14.5px;color:var(--text)">${c.about}</p>
+        </div>
+
+        <div class="pf-section">
+          <h3>🏗️ ผลงานที่ผ่านมา <span class="badge badge-gray">${c.portfolios.length}</span></h3>
+          <div class="folio-grid">
+            ${c.portfolios.map((p,i)=>`
+              <div class="folio">
+                <div class="folio-img" style="background:linear-gradient(135deg,${col}22,${col}44)">${folioIcons[i%folioIcons.length]}</div>
+                <div class="folio-body">
+                  <strong>${p.title}</strong>
+                  <div class="folio-meta">
+                    <span class="badge badge-blue">${p.category}</span>
+                    ${p.style?`<span>🎨 ${p.style}</span>`:''}
+                  </div>
+                  <div class="folio-meta">
+                    <span>💰 ${fmtMoney(p.budget)} บ.</span><span>📅 ${p.year}</span>
+                  </div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="pf-section">
+          <h3>⭐ รีวิวจากลูกค้า <span class="badge badge-gray">${c.reviews.length}</span></h3>
+          ${c.reviews.length? c.reviews.map(r=>`
+            <div class="review">
+              <div class="review-head">
+                <div class="rv-avatar">${r.author.slice(-2)}</div>
+                <div><b style="font-size:14px">${r.author}</b> ${r.verified?'<span class="badge badge-verified" style="font-size:10px">✓ ยืนยันแล้ว</span>':''}
+                  <div>${stars(r.overall)} <span class="num" style="font-size:12px;color:var(--muted)">${r.overall}</span></div>
+                </div>
+              </div>
+              <div class="review-body">${r.comment}</div>
+              <div class="rv-cats">${CATS.map(([k,l])=>`<span>${l}: <b class="num" style="color:var(--ink)">${r[k]}</b></span>`).join('')}</div>
+            </div>`).join('') : '<p style="color:var(--muted)">ยังไม่มีรีวิว</p>'}
+        </div>
+      </div>
+
+      <div>
+        <div class="side-card">
+          <h4>ข้อมูลบริษัท</h4>
+          <div class="info-line"><span>ก่อตั้ง</span><b class="num">${c.founded_year}</b></div>
+          <div class="info-line"><span>ทุนจดทะเบียน</span><b>${fmtMoney(c.capital)} บ.</b></div>
+          <div class="info-line"><span>งบที่รับ</span><b style="font-size:12.5px">${fmtBudget(c.budget_min,c.budget_max)}</b></div>
+          <div class="info-line"><span>รับประกัน</span><b class="num">${c.warranty_years} ปี</b></div>
+          <div class="info-line"><span>ที่ตั้ง</span><b>${c.district}, ${c.province}</b></div>
+          <div class="info-line"><span>โทร</span><b>${c.phone}</b></div>
+        </div>
+
+        <div class="side-card">
+          <h4>👥 ทีมงาน</h4>
+          <div class="team-grid">
+            <div class="team-item"><b class="num">${c.team_size}</b><span>ทีมงานรวม</span></div>
+            <div class="team-item"><b class="num">${c.engineers}</b><span>วิศวกร</span></div>
+            <div class="team-item"><b class="num">${c.architects}</b><span>สถาปนิก</span></div>
+            <div class="team-item"><b class="num">${new Date().getFullYear()-c.founded_year}</b><span>ปีประสบการณ์</span></div>
+          </div>
+        </div>
+
+        <div class="side-card">
+          <h4>📑 เอกสารรับรอง</h4>
+          ${c.documents.map(d=>`
+            <div class="doc-item">
+              <div class="doc-ico">${d.type==='tax'?'🧾':d.type==='license'?'📜':'📋'}</div>
+              <div style="flex:1">${d.name}</div>
+              ${d.verified?'<span class="badge badge-verified" style="font-size:10px">✓</span>':'<span class="badge badge-amber" style="font-size:10px">รอตรวจ</span>'}
+            </div>`).join('')}
+        </div>
+
+        <a class="btn btn-primary btn-block" href="/rfq?c=${c.id}">ขอใบเสนอราคา</a>
+      </div>
+    </div>`;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PCM — จับคู่ผู้รับเหมาที่ใช่ ในไม่กี่นาที</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+/* ── HERO ── */
+.hero{position:relative;overflow:hidden;background:var(--grad);color:#fff;padding:70px 0 90px}
+.hero::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(900px 400px at 85% -10%,rgba(255,255,255,.18),transparent),
+  radial-gradient(600px 300px at 10% 110%,rgba(14,165,233,.4),transparent)}
+.hero-inner{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:50px;align-items:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:7px 16px;border-radius:30px;font-size:13px;font-weight:600;margin-bottom:22px}
+.hero h1{font-size:48px;line-height:1.12;font-weight:800;letter-spacing:-1px;margin-bottom:20px}
+.hero h1 .hl{background:linear-gradient(120deg,#fde047,#fbbf24);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:rgba(255,255,255,.9);margin-bottom:30px;max-width:480px}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+.hero-stats{display:flex;gap:32px;margin-top:38px}
+.hero-stat strong{display:block;font-size:28px;font-weight:800;font-family:'Inter'}
+.hero-stat span{font-size:13px;color:rgba(255,255,255,.75)}
+
+/* hero visual card */
+.hero-card{background:rgba(255,255,255,.97);border-radius:var(--r-xl);box-shadow:0 30px 70px rgba(0,0,0,.3);padding:24px;color:var(--text)}
+.hero-card-img{height:180px;border-radius:16px;background:linear-gradient(135deg,#93c5fd,#3b82f6);position:relative;overflow:hidden;margin-bottom:18px;display:flex;align-items:flex-end;padding:16px}
+.hero-card-img::after{content:'🏡';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:72px;opacity:.85}
+.mini-match{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:14px;margin-bottom:10px}
+.mini-avatar{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+.mini-info{flex:1;min-width:0}
+.mini-info strong{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-info span{font-size:11.5px;color:var(--muted)}
+.mini-score{text-align:right}
+.mini-score b{font-size:19px;font-weight:800;font-family:'Inter';color:var(--primary)}
+.mini-score small{display:block;font-size:10px;color:var(--muted)}
+
+/* ── FEATURES ── */
+.feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:48px}
+.feat{padding:28px 22px;border-radius:var(--r-lg);background:var(--white);border:1px solid var(--line);text-align:center;transition:all .25s}
+.feat:hover{transform:translateY(-5px);box-shadow:var(--sh-lg);border-color:var(--primary-100)}
+.feat-ico{width:58px;height:58px;border-radius:16px;background:var(--primary-50);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px}
+.feat h3{font-size:16.5px;margin-bottom:8px;color:var(--ink)}
+.feat p{font-size:14px;color:var(--muted)}
+
+/* ── STEPS ── */
+.steps{background:var(--white)}
+.step-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:48px;counter-reset:step}
+.step{position:relative;padding:28px 22px;border-radius:var(--r-lg);background:var(--bg);border:1px solid var(--line)}
+.step-num{width:44px;height:44px;border-radius:13px;background:var(--grad);color:#fff;font-family:'Inter';font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:var(--sh-blue)}
+.step h3{font-size:16px;margin-bottom:8px;color:var(--ink)}
+.step p{font-size:13.5px;color:var(--muted)}
+.step::after{content:'→';position:absolute;right:-17px;top:46px;color:var(--primary-light);font-size:22px;font-weight:700;z-index:2}
+.step:last-child::after{display:none}
+
+/* ── RECOMMENDED ── */
+.rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:44px}
+.rec-card{overflow:hidden;cursor:pointer}
+.rec-cover{height:140px;position:relative;display:flex;align-items:center;justify-content:center;font-size:48px;color:rgba(255,255,255,.9)}
+.rec-verified{position:absolute;top:12px;right:12px}
+.rec-body{padding:20px}
+.rec-avatar{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;margin-top:-46px;border:3px solid #fff;position:relative;z-index:2;box-shadow:var(--sh-sm)}
+.rec-name{font-size:16px;font-weight:700;color:var(--ink);margin-top:12px;line-height:1.35}
+.rec-tag{font-size:13px;color:var(--muted);margin-top:3px}
+.rec-meta{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.rec-meta .m{font-size:12.5px;color:var(--muted)}
+.rec-meta .m b{color:var(--ink);font-family:'Inter'}
+
+/* ── CTA BAND ── */
+.cta-band{background:var(--grad);border-radius:var(--r-xl);padding:56px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.cta-band::before{content:'';position:absolute;inset:0;background:radial-gradient(600px 300px at 80% 120%,rgba(255,255,255,.15),transparent)}
+.cta-band h2{font-size:32px;font-weight:800;margin-bottom:14px;position:relative}
+.cta-band p{font-size:17px;color:rgba(255,255,255,.9);margin-bottom:28px;position:relative}
+
+@media(max-width:980px){
+  .hero-inner{grid-template-columns:1fr;gap:36px}
+  .hero h1{font-size:36px}
+  .feat-grid,.step-grid{grid-template-columns:repeat(2,1fr)}
+  .rec-grid{grid-template-columns:1fr}
+  .step::after{display:none}
+}
+</style>
+</head>
+<body data-page="home">
+
+<div id="nav"></div>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="container-wide hero-inner">
+    <div class="fade-up">
+      <div class="hero-badge">⚡ จับคู่ด้วย AI ภายในไม่กี่นาที</div>
+      <h1>หาผู้รับเหมาที่ <span class="hl">ใช่</span><br/>สำหรับบ้านในฝันของคุณ</h1>
+      <p>บอกความต้องการของคุณ แล้วให้ระบบ AI ของ PCM จับคู่ผู้รับเหมาที่เหมาะสมที่สุด พร้อมเปรียบเทียบราคา ผลงาน และรีวิวจริง</p>
+      <div class="hero-cta">
+        <a class="btn btn-white btn-lg" href="/create-project">เริ่มสร้างโปรเจกต์ →</a>
+        <a class="btn btn-lg" style="background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3)" href="/results">ดูผู้รับเหมาทั้งหมด</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><strong id="stat-contractors">—</strong><span>ผู้รับเหมาในระบบ</span></div>
+        <div class="hero-stat"><strong>5 นาที</strong><span>เฉลี่ยจับคู่สำเร็จ</span></div>
+        <div class="hero-stat"><strong>100%</strong><span>ผ่านการตรวจสอบ</span></div>
+      </div>
+    </div>
+
+    <div class="hero-card fade-up" style="animation-delay:.1s">
+      <div class="hero-card-img"><span class="badge" style="background:rgba(255,255,255,.9);color:var(--primary)">โครงการของคุณ</span></div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600">🎯 ผู้รับเหมาที่จับคู่ได้</div>
+      <div id="hero-matches"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section class="section">
+  <div class="container-wide text-center">
+    <div class="eyebrow">ทำไมต้อง PCM</div>
+    <h2 class="h-section mx-auto">จุดเด่นที่ทำให้การหาผู้รับเหมาง่ายขึ้น</h2>
+    <div class="feat-grid">
+      <div class="feat"><div class="feat-ico">🤖</div><h3>AI Matching</h3><p>จับคู่อัจฉริยะจากประเภทงาน งบ ทำเล ผลงาน และรีวิว</p></div>
+      <div class="feat"><div class="feat-ico">✅</div><h3>ตรวจสอบแล้ว</h3><p>ทุกบริษัทผ่านการยืนยันเอกสาร ภพ.20 และใบอนุญาต</p></div>
+      <div class="feat"><div class="feat-ico">⚖️</div><h3>เปรียบเทียบง่าย</h3><p>ดูราคา ระยะเวลา การรับประกัน แบบ side-by-side</p></div>
+      <div class="feat"><div class="feat-ico">💬</div><h3>คุยตรง ขอใบเสนอราคา</h3><p>แชต นัดหมาย และขอใบเสนอราคาหลายเจ้าพร้อมกัน</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STEPS ═══ -->
+<section class="section steps">
+  <div class="container-wide text-center">
+    <div class="eyebrow">ขั้นตอนการใช้งาน</div>
+    <h2 class="h-section mx-auto">เริ่มต้นใน 4 ขั้นตอน</h2>
+    <div class="step-grid" style="text-align:left">
+      <div class="step"><div class="step-num">1</div><h3>สร้างโปรเจกต์</h3><p>บอกประเภทงาน งบประมาณ ทำเล และสไตล์ที่ต้องการ</p></div>
+      <div class="step"><div class="step-num">2</div><h3>AI จับคู่</h3><p>ระบบคำนวณความเหมาะสมและจัดอันดับผู้รับเหมาให้</p></div>
+      <div class="step"><div class="step-num">3</div><h3>เปรียบเทียบ</h3><p>ดูโปรไฟล์ ผลงาน รีวิว และเทียบกันแบบละเอียด</p></div>
+      <div class="step"><div class="step-num">4</div><h3>ขอใบเสนอราคา</h3><p>ส่งคำขอ นัดคุย และเลือกผู้รับเหมาที่ถูกใจ</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RECOMMENDED ═══ -->
+<section class="section">
+  <div class="container-wide">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="eyebrow">ผู้รับเหมาแนะนำ</div>
+        <h2 class="h-section">บริษัทยอดนิยมในระบบ</h2>
+      </div>
+      <a class="btn btn-ghost" href="/results">ดูทั้งหมด →</a>
+    </div>
+    <div class="rec-grid" id="rec-grid"></div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="section-sm">
+  <div class="container-wide">
+    <div class="cta-band">
+      <h2>พร้อมเริ่มสร้างบ้านในฝันแล้วหรือยัง?</h2>
+      <p>ใช้เวลาเพียงไม่กี่นาที เพื่อค้นหาผู้รับเหมาที่เหมาะกับคุณที่สุด</p>
+      <a class="btn btn-white btn-lg" href="/create-project">เริ่มสร้างโปรเจกต์ฟรี →</a>
+    </div>
+  </div>
+</section>
+
+<div id="footer"></div>
+
+<script src="/js/common.js"></script>
+<script>
+(async () => {
+  const list = await API.get('/contractors?sort=rating');
+  document.getElementById('stat-contractors').textContent = list.length + '+';
+
+  // hero mini matches (top 3)
+  const heroBox = document.getElementById('hero-matches');
+  const scores = [98,94,89];
+  heroBox.innerHTML = list.slice(0,3).map((c,i)=>`
+    <div class="mini-match">
+      <div class="mini-avatar" style="background:${colorOf(c.id)}">${initials(c.name)}</div>
+      <div class="mini-info"><strong>${c.name}</strong><span>${c.province} · ${c.work_types[0]}</span></div>
+      <div class="mini-score"><b>${scores[i]}%</b><small>เหมาะสม</small></div>
+    </div>`).join('');
+
+  // recommended grid (top 6 by rating)
+  document.getElementById('rec-grid').innerHTML = list.slice(0,6).map(c=>`
+    <a class="card card-hover rec-card" href="/profile?id=${c.id}">
+      <div class="rec-cover" style="background:linear-gradient(135deg,${colorOf(c.id)},${colorOf(c.id)}bb)">
+        🏗️
+        ${c.verified?`<span class="rec-verified badge badge-verified">✓ ตรวจสอบแล้ว</span>`:''}
+      </div>
+      <div class="rec-body">
+        <div class="rec-avatar" style="background:${colorOf(c.id)}">${initials(c.name)}</div>
+        <div class="rec-name">${c.name}</div>
+        <div class="rec-tag">${c.tagline}</div>
+        <div class="rec-meta">
+          <div class="m">${stars(c.rating)} <b>${c.rating}</b></div>
+          <div class="m">📁 <b>${c.projects_done}</b> ผลงาน</div>
+          <div class="m">📍 ${c.province}</div>
+        </div>
+      </div>
+    </a>`).join('');
+})();
+</script>
+</body>
+</html>

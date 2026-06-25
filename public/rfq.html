@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ขอใบเสนอราคา — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+.rfq-wrap{max-width:760px;margin:0 auto;padding:32px 24px 80px}
+.rfq-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--sh);padding:34px}
+.rfq-title{font-size:24px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.rfq-sub{color:var(--muted);margin-bottom:26px}
+.sel-contractors{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.selc{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r)}
+.selc-avatar{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.selc-info{flex:1;min-width:0}
+.selc-info strong{font-size:14px;display:block}
+.selc-info span{font-size:12px;color:var(--muted)}
+.selc .x{cursor:pointer;color:var(--muted);font-weight:700;padding:4px}
+.dropzone{border:2px dashed var(--line);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all .2s}
+.dropzone:hover{border-color:var(--primary);background:var(--primary-50)}
+.file-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:9px;font-size:13px;margin-top:8px}
+.file-item .x{margin-left:auto;cursor:pointer;color:var(--muted)}
+/* success */
+.success-card{text-align:center;padding:20px}
+.success-ico{width:80px;height:80px;border-radius:50%;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 18px}
+.rfq-no{font-family:'Inter';font-size:22px;font-weight:800;color:var(--primary);letter-spacing:1px;background:var(--primary-50);padding:12px 20px;border-radius:12px;display:inline-block;margin:14px 0}
+</style>
+</head>
+<body data-page="results">
+<div id="nav"></div>
+<div class="rfq-wrap">
+  <div class="rfq-card" id="card"></div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+const ids = (new URLSearchParams(location.search).get('c')||'').split(',').filter(Boolean).map(Number);
+let contractors = [];
+let files = [];
+
+(async () => {
+  if(!ids.length){ document.getElementById('card').innerHTML='<p>ไม่พบผู้รับเหมาที่เลือก <a href="/results">กลับ</a></p>'; return; }
+  contractors = await Promise.all(ids.map(id=>API.get('/contractors/'+id)));
+  renderForm();
+})();
+
+function renderForm(){
+  document.getElementById('card').innerHTML = `
+    <div class="rfq-title">📝 ขอใบเสนอราคา (RFQ)</div>
+    <div class="rfq-sub">ส่งคำขอใบเสนอราคาไปยังผู้รับเหมาที่เลือกพร้อมกัน</div>
+
+    <div class="field"><label>ผู้รับเหมาที่จะส่งคำขอ (${contractors.length})</label>
+      <div class="sel-contractors">
+        ${contractors.map(c=>`<div class="selc">
+          <div class="selc-avatar" style="background:${colorOf(c.id)}">${initials(c.name)}</div>
+          <div class="selc-info"><strong>${c.name}</strong><span>${c.province} · ${c.work_types.join(', ')}</span></div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="field"><label>รายละเอียดงานที่ต้องการเสนอราคา</label>
+      <textarea class="textarea" id="note" placeholder="อธิบายขอบเขตงาน วัสดุ และเงื่อนไขที่ต้องการ"></textarea>
+    </div>
+
+    <div class="field"><label>วันที่ต้องการใบเสนอราคา</label>
+      <input class="input" type="date" id="due"/>
+    </div>
+
+    <div class="field"><label>แนบแบบ / เอกสาร (ไม่บังคับ)</label>
+      <div class="dropzone" onclick="document.getElementById('f').click()">
+        <div style="font-size:30px">📎</div>
+        <div style="font-weight:600;font-size:14px;margin-top:4px">คลิกเพื่อแนบไฟล์</div>
+        <div class="hint">PDF, DWG, JPG, PNG</div>
+      </div>
+      <input type="file" id="f" multiple style="display:none" onchange="addF(this.files)"/>
+      <div id="fl"></div>
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" onclick="submit()" id="sb">ส่งคำขอใบเสนอราคา →</button>`;
+}
+
+function addF(fs){ [...fs].forEach(f=>files.push({name:f.name,size:f.size})); renderF(); }
+function renderF(){ document.getElementById('fl').innerHTML = files.map((f,i)=>`<div class="file-item">📄 ${f.name}<span class="x" onclick="files.splice(${i},1);renderF()">✕</span></div>`).join(''); }
+
+async function submit(){
+  const btn=document.getElementById('sb'); btn.textContent='⏳ กำลังส่ง...'; btn.disabled=true;
+  try{
+    const q = await API.post('/quotations',{
+      project_id: Store.get('projectId')||null,
+      contractor_ids: ids, note: document.getElementById('note').value,
+      due_date: document.getElementById('due').value, files,
+    });
+    document.getElementById('card').innerHTML = `
+      <div class="success-card">
+        <div class="success-ico">✅</div>
+        <h2 style="font-size:22px;font-weight:800">ส่งคำขอเรียบร้อย!</h2>
+        <p style="color:var(--muted)">ผู้รับเหมา ${contractors.length} รายจะได้รับคำขอและตอบกลับเร็วๆ นี้</p>
+        <div class="rfq-no">${q.rfq_no}</div>
+        <div><span class="badge badge-amber">⏳ สถานะ: รอใบเสนอราคา</span></div>
+        <div class="mt-6 flex gap-3" style="justify-content:center">
+          <a class="btn btn-ghost" href="/results">กลับหน้าผลการจับคู่</a>
+          <a class="btn btn-primary" href="/chat?c=${ids[0]}">ไปที่ข้อความ →</a>
+        </div>
+      </div>`;
+  }catch(e){ toast(e.message,'error'); btn.textContent='ส่งคำขอใบเสนอราคา →'; btn.disabled=false; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>นัดหมาย — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+.mt-wrap{max-width:680px;margin:0 auto;padding:32px 24px 80px}
+.mt-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--sh);padding:34px}
+.mt-title{font-size:24px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.mt-sub{color:var(--muted);margin-bottom:24px}
+.contractor-head{display:flex;align-items:center;gap:14px;padding:14px;background:var(--bg);border-radius:var(--r);margin-bottom:24px}
+.ch-avatar{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:6px}
+.mode-opt{border:2px solid var(--line);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:all .2s}
+.mode-opt:hover{border-color:var(--primary-light)}
+.mode-opt.sel{border-color:var(--primary);background:var(--primary-50)}
+.mode-opt .ico{font-size:32px;margin-bottom:8px}
+.mode-opt strong{display:block;font-size:15px;color:var(--ink)}
+.mode-opt span{font-size:12.5px;color:var(--muted)}
+.success-card{text-align:center;padding:20px}
+.success-ico{width:80px;height:80px;border-radius:50%;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 18px}
+</style>
+</head>
+<body data-page="results">
+<div id="nav"></div>
+<div class="mt-wrap"><div class="mt-card" id="card"></div></div>
+
+<script src="/js/common.js"></script>
+<script>
+const cid = new URLSearchParams(location.search).get('c');
+let contractor=null, mode='online';
+
+(async()=>{
+  if(!cid){ document.getElementById('card').innerHTML='<p>ไม่พบผู้รับเหมา <a href="/results">กลับ</a></p>'; return; }
+  contractor = await API.get('/contractors/'+cid);
+  render();
+})();
+
+function render(){
+  document.getElementById('card').innerHTML=`
+    <div class="mt-title">📅 นัดหมายพูดคุย</div>
+    <div class="mt-sub">เลือกรูปแบบและเวลาที่สะดวก</div>
+    <div class="contractor-head">
+      <div class="ch-avatar" style="background:${colorOf(contractor.id)}">${initials(contractor.name)}</div>
+      <div><strong style="font-size:15px">${contractor.name}</strong><div style="font-size:13px;color:var(--muted)">${contractor.phone} · ${contractor.province}</div></div>
+    </div>
+
+    <div class="field"><label>รูปแบบการนัดหมาย</label>
+      <div class="mode-grid">
+        <div class="mode-opt sel" id="m-online" onclick="setMode('online')"><div class="ico">💻</div><strong>ออนไลน์</strong><span>ประชุมผ่านวิดีโอคอล</span></div>
+        <div class="mode-opt" id="m-site" onclick="setMode('site')"><div class="ico">🏠</div><strong>ดูหน้างาน</strong><span>นัดเข้าพบที่ไซต์งาน</span></div>
+      </div>
+    </div>
+
+    <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="field"><label>วันที่</label><input class="input" type="date" id="date"/></div>
+      <div class="field"><label>เวลา</label><input class="input" type="time" id="time"/></div>
+    </div>
+
+    <div class="field" id="locField" style="display:none"><label>สถานที่ / ที่อยู่ไซต์งาน</label>
+      <input class="input" id="loc" placeholder="ระบุที่อยู่ไซต์งาน"/></div>
+
+    <div class="field"><label>หมายเหตุ</label>
+      <textarea class="textarea" id="note" placeholder="รายละเอียดที่ต้องการพูดคุย"></textarea></div>
+
+    <button class="btn btn-primary btn-block btn-lg" onclick="submit()" id="sb">ยืนยันนัดหมาย →</button>`;
+}
+function setMode(m){
+  mode=m;
+  document.getElementById('m-online').classList.toggle('sel',m==='online');
+  document.getElementById('m-site').classList.toggle('sel',m==='site');
+  document.getElementById('locField').style.display = m==='site'?'flex':'none';
+}
+async function submit(){
+  const btn=document.getElementById('sb'); btn.textContent='⏳ กำลังบันทึก...'; btn.disabled=true;
+  try{
+    const m = await API.post('/meetings',{
+      contractor_id:contractor.id, project_id:Store.get('projectId')||null, mode,
+      date:document.getElementById('date').value, time:document.getElementById('time').value,
+      location:document.getElementById('loc')?.value||'', note:document.getElementById('note').value,
+    });
+    document.getElementById('card').innerHTML=`
+      <div class="success-card">
+        <div class="success-ico">📅</div>
+        <h2 style="font-size:22px;font-weight:800">ส่งคำขอนัดหมายแล้ว!</h2>
+        <p style="color:var(--muted);margin-bottom:14px">${contractor.name} จะยืนยันการนัดหมายกลับมา</p>
+        <div class="card" style="padding:16px;text-align:left;max-width:340px;margin:0 auto">
+          <div class="flex justify-between" style="padding:6px 0"><span style="color:var(--muted)">รูปแบบ</span><b>${mode==='online'?'💻 ออนไลน์':'🏠 ดูหน้างาน'}</b></div>
+          <div class="flex justify-between" style="padding:6px 0"><span style="color:var(--muted)">วันเวลา</span><b class="num">${m.date||'-'} ${m.time||''}</b></div>
+          <div class="flex justify-between" style="padding:6px 0"><span style="color:var(--muted)">สถานะ</span><span class="badge badge-amber">รอยืนยัน</span></div>
+        </div>
+        <div class="mt-6 flex gap-3" style="justify-content:center">
+          <a class="btn btn-ghost" href="/profile?id=${contractor.id}">กลับโปรไฟล์</a>
+          <a class="btn btn-primary" href="/chat?c=${contractor.id}">ไปที่ข้อความ →</a>
+        </div>
+      </div>`;
+  }catch(e){ toast(e.message,'error'); btn.textContent='ยืนยันนัดหมาย →'; btn.disabled=false; }
+}
+</script>
+</body>
+</html>

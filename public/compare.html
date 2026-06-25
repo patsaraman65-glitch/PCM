@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>เปรียบเทียบผู้รับเหมา — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.cmp-wrap{max-width:1200px;margin:0 auto;padding:32px 24px 80px}
+.cmp-title{font-size:24px;font-weight:800;color:var(--ink);margin-bottom:4px}
+.cmp-sub{color:var(--muted);margin-bottom:26px}
+
+.empty-state{text-align:center;padding:80px 20px}
+.empty-state .ico{font-size:60px;margin-bottom:16px}
+
+/* comparison table */
+.ctable-wrap{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);overflow:auto;box-shadow:var(--sh-sm);margin-bottom:28px}
+.ctable{width:100%;border-collapse:collapse;min-width:640px}
+.ctable th,.ctable td{padding:16px;text-align:center;border-bottom:1px solid var(--line)}
+.ctable th:first-child,.ctable td:first-child{text-align:left;font-weight:600;color:var(--muted);font-size:13px;background:var(--bg);position:sticky;left:0;min-width:140px}
+.ctable thead th{background:var(--bg-soft);border-bottom:2px solid var(--line)}
+.cth-card{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:150px}
+.cth-avatar{width:54px;height:54px;border-radius:15px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px;font-family:'Inter'}
+.cth-name{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.3}
+.cell-best{background:var(--primary-50)}
+.cell-best .cell-v{color:var(--primary);font-weight:800}
+.cell-v{font-size:15px;font-weight:600;color:var(--ink);font-family:'Inter'}
+.cell-sub{font-size:11px;color:var(--muted)}
+.best-tag{display:inline-block;font-size:9px;background:var(--primary);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px;vertical-align:middle}
+
+/* charts */
+.cmp-charts{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+.chart-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px;box-shadow:var(--sh-sm)}
+.chart-card h3{font-size:16px;font-weight:700;margin-bottom:16px;color:var(--ink)}
+.radar-box{max-width:420px;margin:0 auto;aspect-ratio:1/1}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.leg{display:flex;align-items:center;gap:6px;font-size:12.5px}
+.leg .dot{width:11px;height:11px;border-radius:3px}
+
+/* heatmap */
+.hm{width:100%;border-collapse:separate;border-spacing:0 4px}
+.hm td:first-child{font-size:12.5px;color:var(--text);padding-right:10px;white-space:nowrap}
+.hm-cell{height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-family:'Inter';font-size:13px;margin:0 2px;transition:transform .15s}
+.hm-cell:hover{transform:scale(1.1)}
+
+.cmp-foot{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+@media(max-width:840px){.cmp-charts{grid-template-columns:1fr}}
+</style>
+</head>
+<body data-page="compare">
+<div id="nav"></div>
+
+<div class="cmp-wrap">
+  <div class="cmp-title">⚖️ เปรียบเทียบผู้รับเหมา</div>
+  <div class="cmp-sub" id="sub">เปรียบเทียบแบบ side-by-side เพื่อช่วยตัดสินใจ</div>
+  <div id="body"></div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+// metrics สำหรับ radar (normalize 0-10)
+const AXES = [
+  {k:'price',  l:'ราคาเข้าถึงง่าย'},
+  {k:'quality',l:'คุณภาพ/รีวิว'},
+  {k:'projects',l:'ผลงาน'},
+  {k:'exp',    l:'ประสบการณ์'},
+  {k:'team',   l:'ทีมงาน'},
+  {k:'warranty',l:'การรับประกัน'},
+];
+function metrics(c){
+  const yr = new Date().getFullYear()-c.founded_year;
+  return {
+    price:    Math.round(Math.max(0,10 - (c.budget_min/1000000))),  // งบเริ่มต่ำ = เข้าถึงง่าย
+    quality:  Math.round(c.rating*2),
+    projects: Math.min(10, Math.round(c.projects_done/10)),
+    exp:      Math.min(10, yr),
+    team:     Math.min(10, Math.round(c.team_size/5)),
+    warranty: Math.min(10, c.warranty_years*2),
+  };
+}
+
+const ROWS = [
+  {l:'Match Score', f:c=>c._match!=null?c._match+'%':'—', best:'max', raw:c=>c._match||0},
+  {l:'คะแนนรีวิว', f:c=>`${stars(c.rating)} ${c.rating}`, best:'max', raw:c=>c.rating},
+  {l:'งบที่รับ', f:c=>fmtBudget(c.budget_min,c.budget_max), best:null},
+  {l:'จำนวนผลงาน', f:c=>c.projects_done+' งาน', best:'max', raw:c=>c.projects_done},
+  {l:'การรับประกัน', f:c=>c.warranty_years+' ปี', best:'max', raw:c=>c.warranty_years},
+  {l:'ประสบการณ์', f:c=>(new Date().getFullYear()-c.founded_year)+' ปี', best:'max', raw:c=>c.founded_year, invert:true},
+  {l:'ทีมงาน', f:c=>c.team_size+' คน', best:'max', raw:c=>c.team_size},
+  {l:'วิศวกร / สถาปนิก', f:c=>`${c.engineers} / ${c.architects}`, best:null},
+  {l:'ที่ตั้ง', f:c=>c.province, best:null},
+  {l:'ยืนยันแล้ว', f:c=>c.verified?'✓ ใช่':'—', best:null},
+];
+
+(async () => {
+  const sel = Store.get('compare', []);
+  const body = document.getElementById('body');
+  if(sel.length<2){
+    body.innerHTML = `<div class="empty-state card">
+      <div class="ico">⚖️</div>
+      <h2 style="font-size:20px;margin-bottom:8px">ยังไม่มีรายการเปรียบเทียบ</h2>
+      <p style="color:var(--muted);margin-bottom:20px">เลือกผู้รับเหมาอย่างน้อย 2 รายจากหน้าผลการจับคู่</p>
+      <a class="btn btn-primary" href="/results">ไปหน้าผลการจับคู่ →</a></div>`;
+    return;
+  }
+
+  // fetch contractors + match scores if available
+  const contractors = await Promise.all(sel.map(s=>API.get('/contractors/'+s.id)));
+  const pid = Store.get('projectId');
+  if(pid){
+    try{
+      const md = await API.get('/projects/'+pid+'/matches');
+      contractors.forEach(c=>{ const m=md.results.find(r=>r.contractor.id===c.id); c._match=m?m.score:null; });
+    }catch{}
+  }
+  document.getElementById('sub').textContent = `เปรียบเทียบ ${contractors.length} ราย`;
+
+  // ── table ──
+  let thead = `<tr><th></th>${contractors.map(c=>`<th><div class="cth-card">
+    <div class="cth-avatar" style="background:${colorOf(c.id)}">${initials(c.name)}</div>
+    <div class="cth-name">${c.name}</div></div></th>`).join('')}</tr>`;
+  let rows = ROWS.map(r=>{
+    let bestVal=null, bestIdx=-1;
+    if(r.best){
+      contractors.forEach((c,i)=>{ let v=r.raw(c); if(r.invert)v=-v; if(bestVal===null||v>bestVal){bestVal=v;bestIdx=i;} });
+    }
+    return `<tr><td>${r.l}</td>${contractors.map((c,i)=>`
+      <td class="${i===bestIdx?'cell-best':''}"><span class="cell-v">${r.f(c)}</span>${i===bestIdx?'<span class="best-tag">ดีสุด</span>':''}</td>`).join('')}</tr>`;
+  }).join('');
+  // ── charts + foot ──
+  body.innerHTML = `
+    <div class="ctable-wrap"><table class="ctable"><thead>${thead}</thead><tbody>${rows}</tbody></table></div>
+    <div class="cmp-charts">
+      <div class="chart-card">
+        <h3>📡 เรดาร์เปรียบเทียบ</h3>
+        <div class="legend" id="legend"></div>
+        <div class="radar-box"><canvas id="radar"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>🌡 ตารางความร้อน (Heatmap)</h3>
+        <div id="heatmap"></div>
+      </div>
+    </div>
+    <div class="cmp-foot">
+      <a class="btn btn-ghost" href="/results">← กลับไปผลการจับคู่</a>
+      <a class="btn btn-primary" href="/rfq?c=${contractors.map(c=>c.id).join(',')}">ขอใบเสนอราคาทั้งหมด</a>
+    </div>`;
+
+  // radar
+  document.getElementById('legend').innerHTML = contractors.map(c=>`<div class="leg"><span class="dot" style="background:${colorOf(c.id)}"></span>${initials(c.name)} · ${c.name.split(' ').slice(-2).join(' ')}</div>`).join('');
+  new Chart(document.getElementById('radar'),{
+    type:'radar',
+    data:{ labels:AXES.map(a=>a.l),
+      datasets:contractors.map(c=>{ const m=metrics(c); const col=colorOf(c.id);
+        return {label:c.name,data:AXES.map(a=>m[a.k]),borderColor:col,
+          backgroundColor:col+'25',borderWidth:2,pointBackgroundColor:col,pointRadius:3};})},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{r:{min:0,max:10,ticks:{stepSize:2,font:{size:9}},pointLabels:{font:{size:11,family:'Sarabun'}}}}}
+  });
+
+  // heatmap
+  const hmColor=v=>v>=9?'#1e40af':v>=7?'#2563eb':v>=5?'#60a5fa':v>=3?'#f59e0b':'#f43f5e';
+  let hm=`<table class="hm">`;
+  AXES.forEach(a=>{
+    hm+=`<tr><td>${a.l}</td>${contractors.map(c=>{const v=metrics(c)[a.k];
+      return `<td><div class="hm-cell" style="background:${hmColor(v)}">${v}</div></td>`;}).join('')}</tr>`;
+  });
+  hm+=`</table>`;
+  document.getElementById('heatmap').innerHTML=hm;
+})();
+</script>
+</body>
+</html>

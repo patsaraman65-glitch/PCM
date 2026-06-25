@@ -147,25 +147,34 @@ const ROWS = [
       <a class="btn btn-primary" href="/rfq?c=${contractors.map(c=>c.id).join(',')}">ขอใบเสนอราคาทั้งหมด</a>
     </div>`;
 
+  // ตัวชี้วัดจริงจาก admin
+  const INDICATORS = await API.get('/indicators');
+  const sc=(c,k)=>(c.scores&&c.scores[k]!=null)?c.scores[k]:0;
+
   // radar
   document.getElementById('legend').innerHTML = contractors.map(c=>`<div class="leg"><span class="dot" style="background:${colorOf(c.id)}"></span>${initials(c.name)} · ${c.name.split(' ').slice(-2).join(' ')}</div>`).join('');
   new Chart(document.getElementById('radar'),{
     type:'radar',
-    data:{ labels:AXES.map(a=>a.l),
-      datasets:contractors.map(c=>{ const m=metrics(c); const col=colorOf(c.id);
-        return {label:c.name,data:AXES.map(a=>m[a.k]),borderColor:col,
+    data:{ labels:INDICATORS.map(a=>a.label.split(' ')[0].slice(0,8)),
+      datasets:contractors.map(c=>{ const col=colorOf(c.id);
+        return {label:c.name,data:INDICATORS.map(a=>sc(c,a.key)),borderColor:col,
           backgroundColor:col+'25',borderWidth:2,pointBackgroundColor:col,pointRadius:3};})},
     options:{responsive:true,plugins:{legend:{display:false}},
-      scales:{r:{min:0,max:10,ticks:{stepSize:2,font:{size:9}},pointLabels:{font:{size:11,family:'Sarabun'}}}}}
+      scales:{r:{min:0,max:10,ticks:{stepSize:2,font:{size:9}},pointLabels:{font:{size:10,family:'Sarabun'}}}}}
   });
 
   // heatmap
   const hmColor=v=>v>=9?'#1e40af':v>=7?'#2563eb':v>=5?'#60a5fa':v>=3?'#f59e0b':'#f43f5e';
   let hm=`<table class="hm">`;
-  AXES.forEach(a=>{
-    hm+=`<tr><td>${a.l}</td>${contractors.map(c=>{const v=metrics(c)[a.k];
+  INDICATORS.forEach(a=>{
+    hm+=`<tr><td>${a.label}</td>${contractors.map(c=>{const v=sc(c,a.key);
       return `<td><div class="hm-cell" style="background:${hmColor(v)}">${v}</div></td>`;}).join('')}</tr>`;
   });
+  // คะแนนรวมถ่วงน้ำหนัก
+  const tw=INDICATORS.reduce((a,i)=>a+i.weight,0);
+  hm+=`<tr><td><strong>คะแนนรวม</strong></td>${contractors.map(c=>{
+    const ws=(INDICATORS.reduce((a,i)=>a+(sc(c,i.key)/10)*i.weight,0)/tw*10).toFixed(1);
+    return `<td><div class="hm-cell" style="background:#0f172a">${ws}</div></td>`;}).join('')}</tr>`;
   hm+=`</table>`;
   document.getElementById('heatmap').innerHTML=hm;
 })();

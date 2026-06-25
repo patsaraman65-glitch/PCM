@@ -43,6 +43,8 @@ async function getDb() {
       phone         TEXT DEFAULT '',
       email         TEXT DEFAULT '',
       documents     TEXT NOT NULL DEFAULT '[]',   -- JSON array {name, type, verified}
+      scores        TEXT NOT NULL DEFAULT '{}',   -- JSON 8 ตัวชี้วัดประเมิน (0-10)
+      status        TEXT NOT NULL DEFAULT 'active', -- active | review
       created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     );
 
@@ -339,18 +341,28 @@ function seedIfEmpty() {
     },
   ];
 
-  contractors.forEach(c => {
+  // ตัวชี้วัดการประเมิน 8 เกณฑ์ (0-10) เรียงตาม contractor ด้านบน
+  const scoreSeed = [
+    {price:7,quality:9,advance:7,service:7,expertise:9,workSystem:8,financial:9,experience:9}, // ขจรณ์
+    {price:6,quality:8,advance:4,service:9,expertise:7,workSystem:6,financial:5,experience:7}, // เกรทโฮม
+    {price:8,quality:7,advance:6,service:8,expertise:7,workSystem:8,financial:7,experience:8}, // อัสรา
+    {price:5,quality:4,advance:9,service:3,expertise:5,workSystem:3,financial:4,experience:5}, // จีซี
+    {price:6,quality:9,advance:5,service:8,expertise:9,workSystem:8,financial:6,experience:7}, // นอร์ดิก
+    {price:7,quality:8,advance:6,service:7,expertise:8,workSystem:7,financial:7,experience:8}, // ทรอปิคอล
+  ];
+
+  contractors.forEach((c, i) => {
     db.run(
       `INSERT INTO contractors
        (name,tagline,work_types,styles,budget_min,budget_max,province,district,lat,lng,
         founded_year,capital,team_size,engineers,architects,warranty_years,rating,review_count,
-        projects_done,verified,about,phone,email,documents)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        projects_done,verified,about,phone,email,documents,scores,status)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [c.name, c.tagline, JSON.stringify(c.work_types), JSON.stringify(c.styles),
        c.budget_min, c.budget_max, c.province, c.district, c.lat, c.lng,
        c.founded_year, c.capital, c.team_size, c.engineers, c.architects, c.warranty_years,
        c.rating, c.review_count, c.projects_done, c.verified, c.about, c.phone, c.email,
-       JSON.stringify(c.documents)]
+       JSON.stringify(c.documents), JSON.stringify(scoreSeed[i]||{}), c.verified?'active':'review']
     );
   });
 

@@ -98,7 +98,21 @@ dbModule.getDb().then(() => {
   const hydrate = c => c && ({
     ...c,
     work_types: J(c.work_types), styles: J(c.styles), documents: J(c.documents),
+    scores: J(c.scores, {}),
   });
+
+  // ── INDICATORS definition (8 เกณฑ์) ──────────────────────────
+  const INDICATORS = [
+    {key:'price',      label:'ราคาประหยัด',                    weight:20},
+    {key:'quality',    label:'คุณภาพงาน & มาตรฐาน',            weight:10},
+    {key:'advance',    label:'การเบิกล่วงหน้า',                 weight:10},
+    {key:'service',    label:'การบริการ & ความยืดหยุ่น',        weight:10},
+    {key:'expertise',  label:'ความเชี่ยวชาญ & ความน่าเชื่อถือ', weight:10},
+    {key:'workSystem', label:'ระบบการทำงาน',                    weight:15},
+    {key:'financial',  label:'ผลประกอบการ & สถานะการเงิน',      weight:15},
+    {key:'experience', label:'ประสบการณ์การทำงาน',              weight:10},
+  ];
+  app.get('/api/indicators', (req,res)=> res.json(INDICATORS));
 
   // ── CONTRACTORS ──────────────────────────────────────────────
   app.get('/api/contractors', (req, res) => {
@@ -119,6 +133,57 @@ dbModule.getDb().then(() => {
     c.portfolios = all('SELECT * FROM portfolios WHERE contractor_id=?', [c.id]).map(p=>({...p, images:J(p.images)}));
     c.reviews    = all('SELECT * FROM reviews WHERE contractor_id=? ORDER BY id DESC', [c.id]);
     res.json(c);
+  });
+
+  // ── CONTRACTOR CRUD (admin) ──────────────────────────────────
+  const CFIELDS = ['name','logo','cover','tagline','work_types','styles','budget_min','budget_max',
+    'province','district','lat','lng','founded_year','capital','team_size','engineers','architects',
+    'warranty_years','rating','review_count','projects_done','verified','about','phone','email',
+    'documents','scores','status'];
+  const JSON_FIELDS = ['work_types','styles','documents','scores'];
+  const packBody = b => {
+    const out = {};
+    CFIELDS.forEach(f => { if (b[f] !== undefined) out[f] = JSON_FIELDS.includes(f) ? JSON.stringify(b[f]) : b[f]; });
+    return out;
+  };
+
+  app.post('/api/contractors', (req, res) => {
+    const b = req.body;
+    if (!b.name) return res.status(400).json({ error: 'กรุณาระบุชื่อบริษัท' });
+    const data = packBody(b);
+    const cols = Object.keys(data), ph = cols.map(()=>'?').join(',');
+    const r = run(`INSERT INTO contractors (${cols.join(',')}) VALUES (${ph})`, Object.values(data));
+    res.status(201).json(hydrate(get('SELECT * FROM contractors WHERE id=?', [r.lastInsertRowid])));
+  });
+
+  app.put('/api/contractors/:id', (req, res) => {
+    if (!get('SELECT id FROM contractors WHERE id=?', [req.params.id]))
+      return res.status(404).json({ error: 'Not found' });
+    const data = packBody(req.body);
+    if (!Object.keys(data).length) return res.status(400).json({ error: 'No fields' });
+    const setC = Object.keys(data).map(f=>`${f}=?`).join(',');
+    run(`UPDATE contractors SET ${setC} WHERE id=?`, [...Object.values(data), req.params.id]);
+    res.json(hydrate(get('SELECT * FROM contractors WHERE id=?', [req.params.id])));
+  });
+
+  app.delete('/api/contractors/:id', (req, res) => {
+    if (!get('SELECT id FROM contractors WHERE id=?', [req.params.id]))
+      return res.status(404).json({ error: 'Not found' });
+    run('DELETE FROM contractors WHERE id=?', [req.params.id]);
+    run('DELETE FROM portfolios WHERE contractor_id=?', [req.params.id]);
+    res.json({ success: true });
+  });
+
+  // ── PORTFOLIO CRUD (admin) ───────────────────────────────────
+  app.post('/api/contractors/:id/portfolios', (req, res) => {
+    const b = req.body;
+    const r = run(`INSERT INTO portfolios (contractor_id,title,category,style,budget,year,description) VALUES (?,?,?,?,?,?,?)`,
+      [req.params.id, b.title||'', b.category||'', b.style||'', b.budget||0, b.year||null, b.description||'']);
+    res.status(201).json(get('SELECT * FROM portfolios WHERE id=?', [r.lastInsertRowid]));
+  });
+  app.delete('/api/portfolios/:id', (req, res) => {
+    run('DELETE FROM portfolios WHERE id=?', [req.params.id]);
+    res.json({ success: true });
   });
 
   // ── PROJECTS ─────────────────────────────────────────────────
@@ -303,7 +368,7 @@ dbModule.getDb().then(() => {
 
   // ── PAGE ROUTES (clean URLs) ─────────────────────────────────
   const pages = ['create-project','results','profile','compare','rfq','meeting','chat',
-                 'dashboard','proposals','contract','payments','handover','review'];
+                 'dashboard','proposals','contract','payments','handover','review','admin'];
   app.get('/', (req,res)=> res.sendFile(path.join(PUBLIC,'index.html')));
   pages.forEach(p => app.get('/'+p, (req,res)=> res.sendFile(path.join(PUBLIC, p+'.html'))));
 

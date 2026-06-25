@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Admin — จัดการผู้รับเหมา | PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* admin header band */
+.admin-band{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:0 28px}
+.admin-band-inner{max-width:1400px;margin:0 auto;height:60px;display:flex;align-items:center;gap:16px}
+.admin-logo{display:flex;align-items:center;gap:11px}
+.admin-logo .mk{width:36px;height:36px;border-radius:9px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+.admin-logo strong{font-size:16px}.admin-logo span{font-size:11px;color:#94a3b8;display:block}
+.admin-tag{margin-left:auto;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);padding:5px 14px;border-radius:20px;font-size:12.5px}
+.admin-band a.back{color:#cbd5e1;font-size:13px}
+
+.adm-wrap{max-width:1400px;margin:0 auto;padding:28px}
+.adm-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.adm-head h1{font-size:24px;font-weight:800;color:var(--ink)}
+.adm-head p{color:var(--muted);font-size:14px}
+
+/* stats */
+.adm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.astat{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh-sm)}
+.astat-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.astat b{font-size:24px;font-weight:800;font-family:'Inter';display:block;line-height:1}
+.astat span{font-size:12.5px;color:var(--muted)}
+
+/* toolbar */
+.adm-toolbar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.adm-search{flex:1;min-width:220px;position:relative}
+.adm-search input{width:100%;padding:11px 14px 11px 40px;border:1px solid var(--line);border-radius:10px;font-family:'Sarabun';font-size:14px}
+.adm-search input:focus{outline:none;border-color:var(--primary)}
+.adm-search::before{content:'🔍';position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px}
+
+/* table */
+.adm-table-wrap{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);overflow:auto;box-shadow:var(--sh-sm)}
+.adm-table{width:100%;border-collapse:collapse;min-width:900px}
+.adm-table th{background:var(--bg-soft);font-size:12px;font-weight:700;color:var(--muted);padding:12px 14px;text-align:left;border-bottom:2px solid var(--line);white-space:nowrap}
+.adm-table td{padding:12px 14px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:middle}
+.adm-table tr:hover td{background:#fafbff}
+.adm-c-name{display:flex;align-items:center;gap:11px}
+.adm-avatar{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0}
+.adm-c-name strong{font-size:13.5px;color:var(--ink);display:block}
+.adm-c-name span{font-size:11.5px;color:var(--muted)}
+.score-pill{display:inline-flex;align-items:center;justify-content:center;min-width:38px;padding:3px 8px;border-radius:8px;font-family:'Inter';font-weight:700;font-size:13px;color:#fff}
+.act-btns{display:flex;gap:6px}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.icon-btn:hover{border-color:var(--primary);color:var(--primary)}
+.icon-btn.del:hover{border-color:var(--rose);color:var(--rose)}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(10,20,50,.55);backdrop-filter:blur(4px);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;width:100%;max-width:880px;box-shadow:0 24px 80px rgba(0,0,0,.3);margin:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5;border-radius:20px 20px 0 0}
+.modal-head h2{font-size:19px;font-weight:800}
+.x-btn{width:34px;height:34px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;font-size:18px;color:var(--muted)}
+.modal-body{padding:24px 28px}
+/* tabs */
+.mtabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:22px;overflow-x:auto}
+.mtab{padding:10px 16px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.mtab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.mpane{display:none}.mpane.active{display:block}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.frow-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip-sel{padding:7px 14px;border:1.5px solid var(--line);border-radius:20px;font-size:13px;cursor:pointer;transition:all .15s}
+.chip-sel.on{background:var(--primary-50);border-color:var(--primary);color:var(--primary);font-weight:600}
+/* indicators */
+.ind-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 28px}
+.ind-row{display:flex;align-items:center;gap:12px}
+.ind-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ind-label{flex:1;font-size:13px}
+.ind-label small{color:var(--muted-lt);font-size:11px}
+.ind-range{flex:1.4}
+.ind-range input{width:100%}
+.ind-val{width:34px;text-align:center;font-family:'Inter';font-weight:700;color:var(--primary);font-size:15px}
+.ind-preview{display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ind-preview canvas{max-width:260px}
+.ind-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
+/* doc rows */
+.doc-row{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.doc-row input{flex:1}
+.mini-add{display:flex;gap:8px;margin-top:8px}
+.modal-foot{padding:16px 28px;display:flex;justify-content:space-between;border-top:1px solid var(--line);position:sticky;bottom:0;background:#fff;border-radius:0 0 20px 20px}
+@media(max-width:760px){.adm-stats{grid-template-columns:1fr 1fr}.frow,.frow-3,.ind-grid,.ind-layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="admin-band">
+  <div class="admin-band-inner">
+    <div class="admin-logo"><div class="mk">PCM</div><div><strong>Admin Console</strong><span>จัดการข้อมูลผู้รับเหมา</span></div></div>
+    <span class="admin-tag">🔐 โหมดผู้ดูแลระบบ</span>
+    <a class="back" href="/">← กลับหน้าเว็บ</a>
+  </div>
+</div>
+
+<div class="adm-wrap">
+  <div class="adm-head">
+    <div><h1>จัดการผู้รับเหมา</h1><p>เพิ่ม แก้ไข และกำหนดตัวชี้วัดการประเมินของผู้รับเหมาทั้งหมด</p></div>
+    <button class="btn btn-primary" onclick="openModal()">+ เพิ่มผู้รับเหมา</button>
+  </div>
+
+  <div class="adm-stats" id="stats"></div>
+
+  <div class="adm-toolbar">
+    <div class="adm-search"><input id="search" placeholder="ค้นหาชื่อบริษัท / จังหวัด..." oninput="render()"/></div>
+    <select class="select" id="fStatus" style="max-width:180px" onchange="render()">
+      <option value="">ทุกสถานะ</option><option value="active">ใช้งาน</option><option value="review">รอตรวจสอบ</option>
+    </select>
+  </div>
+
+  <div class="adm-table-wrap">
+    <table class="adm-table">
+      <thead><tr>
+        <th>บริษัท</th><th>ประเภทงาน</th><th>จังหวัด</th><th>ดาว</th>
+        <th>คะแนนรวม</th><th>ผลงาน</th><th>สถานะ</th><th></th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+<div class="modal">
+  <div class="modal-head"><h2 id="mTitle">เพิ่มผู้รับเหมา</h2><button class="x-btn" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="mtabs">
+      <div class="mtab active" onclick="tab('basic',this)">ข้อมูลพื้นฐาน</div>
+      <div class="mtab" onclick="tab('finance',this)">การเงิน & ทีม</div>
+      <div class="mtab" onclick="tab('ind',this)">ตัวชี้วัดการประเมิน</div>
+      <div class="mtab" onclick="tab('docs',this)">เอกสาร</div>
+    </div>
+
+    <!-- basic -->
+    <div class="mpane active" data-pane="basic">
+      <div class="field"><label>ชื่อบริษัท / ห้างหุ้นส่วน *</label><input class="input" id="f_name"/></div>
+      <div class="field"><label>คำโปรย (Tagline)</label><input class="input" id="f_tagline"/></div>
+      <div class="field"><label>ประเภทงานที่รับ</label><div class="chips" id="f_worktypes"></div></div>
+      <div class="field"><label>สไตล์ที่ถนัด</label><div class="chips" id="f_styles"></div></div>
+      <div class="frow-3">
+        <div class="field"><label>จังหวัด</label><input class="input" id="f_province"/></div>
+        <div class="field"><label>อำเภอ/เขต</label><input class="input" id="f_district"/></div>
+        <div class="field"><label>ปีก่อตั้ง</label><input class="input num" type="number" id="f_founded"/></div>
+      </div>
+      <div class="field"><label>เกี่ยวกับบริษัท</label><textarea class="textarea" id="f_about"></textarea></div>
+      <div class="frow"><div class="field"><label>โทรศัพท์</label><input class="input" id="f_phone"/></div>
+        <div class="field"><label>อีเมล</label><input class="input" id="f_email"/></div></div>
+    </div>
+
+    <!-- finance -->
+    <div class="mpane" data-pane="finance">
+      <div class="frow-3">
+        <div class="field"><label>ทุนจดทะเบียน (บาท)</label><input class="input num" type="number" id="f_capital"/></div>
+        <div class="field"><label>งบที่รับ-ต่ำสุด</label><input class="input num" type="number" id="f_bmin"/></div>
+        <div class="field"><label>งบที่รับ-สูงสุด</label><input class="input num" type="number" id="f_bmax"/></div>
+      </div>
+      <div class="frow-3">
+        <div class="field"><label>ทีมงานรวม</label><input class="input num" type="number" id="f_team"/></div>
+        <div class="field"><label>วิศวกร</label><input class="input num" type="number" id="f_eng"/></div>
+        <div class="field"><label>สถาปนิก</label><input class="input num" type="number" id="f_arch"/></div>
+      </div>
+      <div class="frow-3">
+        <div class="field"><label>โครงการสำเร็จ</label><input class="input num" type="number" id="f_projects"/></div>
+        <div class="field"><label>จำนวนรีวิว</label><input class="input num" type="number" id="f_reviews"/></div>
+        <div class="field"><label>รับประกัน (ปี)</label><input class="input num" type="number" id="f_warranty"/></div>
+      </div>
+      <div class="frow-3">
+        <div class="field"><label>คะแนนดาว (0-5)</label><input class="input num" type="number" step="0.1" min="0" max="5" id="f_rating"/></div>
+        <div class="field"><label>ยืนยันแล้ว</label><select class="select" id="f_verified"><option value="1">✓ ยืนยันแล้ว</option><option value="0">ยังไม่ยืนยัน</option></select></div>
+        <div class="field"><label>สถานะ</label><select class="select" id="f_status"><option value="active">ใช้งาน</option><option value="review">รอตรวจสอบ</option></select></div>
+      </div>
+      <div class="field"><label>สีประจำตัว (กราฟ)</label><input type="color" id="f_color" value="#2563eb" style="height:40px;width:80px;padding:3px"/></div>
+    </div>
+
+    <!-- indicators -->
+    <div class="mpane" data-pane="ind">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">ให้คะแนน 0–10 ต่อเกณฑ์ — คะแนนรวมถ่วงน้ำหนักจะคำนวณอัตโนมัติ และนำไปแสดงในหน้า Profile / Compare</p>
+      <div class="ind-layout">
+        <div class="ind-grid" id="f_indicators"></div>
+        <div class="ind-preview">
+          <canvas id="indRadar"></canvas>
+          <div style="margin-top:12px;text-align:center">
+            <div style="font-size:12px;color:var(--muted)">คะแนนรวมถ่วงน้ำหนัก</div>
+            <div style="font-size:32px;font-weight:800;font-family:'Inter';color:var(--primary)" id="weightedScore">0.0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- docs -->
+    <div class="mpane" data-pane="docs">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">เอกสารรับรองของบริษัท</p>
+      <div id="f_docs"></div>
+      <div class="mini-add">
+        <input class="input" id="doc_name" placeholder="ชื่อเอกสาร เช่น ภพ.20"/>
+        <select class="select" id="doc_type" style="max-width:140px"><option value="certificate">หนังสือรับรอง</option><option value="tax">ภาษี</option><option value="license">ใบอนุญาต</option></select>
+        <button class="btn btn-soft btn-sm" onclick="addDoc()">+ เพิ่ม</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" id="delBtn" onclick="delCurrent()" style="color:var(--rose);visibility:hidden">🗑 ลบผู้รับเหมานี้</button>
+    <div class="flex gap-2">
+      <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="save()" id="saveBtn">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/js/common.js"></script>
+<script>
+const WORK_TYPES=['สร้างบ้านใหม่','ต่อเติม','รีโนเวท','ตกแต่งภายใน','งานระบบ'];
+const STYLES=['Modern','Minimal','Nordic','Luxury','Tropical','Loft'];
+let INDICATORS=[], DB=[], editing=null, sel={work_types:[],styles:[]}, docs=[], scores={}, radarChart=null;
+
+async function init(){
+  INDICATORS = await API.get('/indicators');
+  await reload();
+}
+async function reload(){ DB = await API.get('/contractors'); renderStats(); render(); }
+
+function renderStats(){
+  const verified=DB.filter(c=>c.verified===1).length;
+  const avg=DB.length?(DB.reduce((s,c)=>s+c.rating,0)/DB.length).toFixed(1):0;
+  const proj=DB.reduce((s,c)=>s+c.projects_done,0);
+  document.getElementById('stats').innerHTML=`
+    <div class="astat"><div class="astat-ico" style="background:var(--primary-50)">🏢</div><div><b class="num">${DB.length}</b><span>ผู้รับเหมาทั้งหมด</span></div></div>
+    <div class="astat"><div class="astat-ico" style="background:#ecfdf5">✅</div><div><b class="num">${verified}</b><span>ยืนยันแล้ว</span></div></div>
+    <div class="astat"><div class="astat-ico" style="background:#fffbeb">⭐</div><div><b class="num">${avg}</b><span>ดาวเฉลี่ย</span></div></div>
+    <div class="astat"><div class="astat-ico" style="background:#f5f3ff">📁</div><div><b class="num">${proj}</b><span>ผลงานรวม</span></div></div>`;
+}
+
+function weightedScore(s){
+  const tw=INDICATORS.reduce((a,i)=>a+i.weight,0)||1;
+  const t=INDICATORS.reduce((a,i)=>a+((s[i.key]||0)/10)*i.weight,0);
+  return +(t/tw*10).toFixed(1);
+}
+
+function render(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const st=document.getElementById('fStatus').value;
+  const rows=DB.filter(c=>{
+    if(st && (c.status||'active')!==st) return false;
+    return !q || c.name.toLowerCase().includes(q) || (c.province||'').toLowerCase().includes(q);
+  });
+  document.getElementById('tbody').innerHTML = rows.map(c=>{
+    const ws=weightedScore(c.scores||{});
+    const col=c.color||colorOf(c.id);
+    const scoreCol = ws>=8?'#10b981':ws>=6?'#2563eb':ws>=4?'#f59e0b':'#f43f5e';
+    return `<tr>
+      <td><div class="adm-c-name"><div class="adm-avatar" style="background:${col}">${initials(c.name)}</div>
+        <div><strong>${c.name}</strong><span>${c.tagline||''}</span></div></div></td>
+      <td>${(c.work_types||[]).slice(0,2).join(', ')||'-'}</td>
+      <td>${c.province||'-'}</td>
+      <td>${stars(c.rating)} <span class="num" style="font-size:12px;color:var(--muted)">${c.rating}</span></td>
+      <td><span class="score-pill" style="background:${scoreCol}">${ws}</span></td>
+      <td class="num">${c.projects_done}</td>
+      <td>${c.verified?'<span class="badge badge-green">✓ ยืนยัน</span>':'<span class="badge badge-amber">รอตรวจ</span>'}</td>
+      <td><div class="act-btns">
+        <button class="icon-btn" onclick="openModal(${c.id})" title="แก้ไข">✏️</button>
+        <button class="icon-btn del" onclick="del(${c.id})" title="ลบ">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:30px">ไม่พบข้อมูล</td></tr>`;
+}
+
+// ── MODAL ──
+function tab(name,el){
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.mpane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelector(`[data-pane="${name}"]`).classList.add('active');
+  if(name==='ind') setTimeout(drawRadar,50);
+}
+
+function buildChips(){
+  document.getElementById('f_worktypes').innerHTML = WORK_TYPES.map(w=>`<div class="chip-sel ${sel.work_types.includes(w)?'on':''}" onclick="toggleChip('work_types','${w}',this)">${w}</div>`).join('');
+  document.getElementById('f_styles').innerHTML = STYLES.map(s=>`<div class="chip-sel ${sel.styles.includes(s)?'on':''}" onclick="toggleChip('styles','${s}',this)">${s}</div>`).join('');
+}
+function toggleChip(group,val,el){
+  const i=sel[group].indexOf(val);
+  if(i>=0) sel[group].splice(i,1); else sel[group].push(val);
+  el.classList.toggle('on');
+}
+
+function buildIndicators(){
+  document.getElementById('f_indicators').innerHTML = INDICATORS.map(ind=>`
+    <div class="ind-row">
+      <div class="ind-dot" style="background:${colorOfInd(ind.key)}"></div>
+      <div class="ind-label">${ind.label}<br><small>น้ำหนัก ${ind.weight}%</small></div>
+      <div class="ind-range"><input type="range" min="0" max="10" value="${scores[ind.key]??5}" oninput="setInd('${ind.key}',this.value)"/></div>
+      <div class="ind-val" id="iv_${ind.key}">${scores[ind.key]??5}</div>
+    </div>`).join('');
+}
+const INDCOLORS={price:'#c9a84c',quality:'#1a9e8f',advance:'#4c7fcf',service:'#9b59b6',expertise:'#e8547a',workSystem:'#f5a623',financial:'#2ecc71',experience:'#e74c3c'};
+function colorOfInd(k){return INDCOLORS[k]||'#2563eb';}
+function setInd(k,v){scores[k]=+v;document.getElementById('iv_'+k).textContent=v;document.getElementById('weightedScore').textContent=weightedScore(scores).toFixed(1);drawRadar();}
+
+function drawRadar(){
+  const ctx=document.getElementById('indRadar'); if(!ctx)return;
+  if(radarChart)radarChart.destroy();
+  radarChart=new Chart(ctx,{type:'radar',
+    data:{labels:INDICATORS.map(i=>i.label.split(' ')[0].slice(0,8)),
+      datasets:[{data:INDICATORS.map(i=>scores[i.key]??0),backgroundColor:'rgba(37,99,235,.15)',borderColor:'#2563eb',borderWidth:2,pointBackgroundColor:'#2563eb',pointRadius:3}]},
+    options:{plugins:{legend:{display:false}},scales:{r:{min:0,max:10,ticks:{stepSize:2,font:{size:8}},pointLabels:{font:{size:9}}}}}});
+}
+
+function buildDocs(){
+  document.getElementById('f_docs').innerHTML = docs.map((d,i)=>`
+    <div class="doc-row">
+      <span class="badge ${d.verified?'badge-green':'badge-amber'}">${d.type==='tax'?'🧾':d.type==='license'?'📜':'📋'}</span>
+      <input class="input" value="${d.name}" onchange="docs[${i}].name=this.value"/>
+      <label style="font-size:12px;display:flex;gap:5px;align-items:center;white-space:nowrap"><input type="checkbox" ${d.verified?'checked':''} onchange="docs[${i}].verified=this.checked">ยืนยัน</label>
+      <button class="icon-btn del" onclick="docs.splice(${i},1);buildDocs()">✕</button>
+    </div>`).join('');
+}
+function addDoc(){
+  const name=document.getElementById('doc_name').value.trim(); if(!name){toast('ระบุชื่อเอกสาร');return;}
+  docs.push({name,type:document.getElementById('doc_type').value,verified:false});
+  document.getElementById('doc_name').value=''; buildDocs();
+}
+
+function openModal(id=null){
+  editing=id; sel={work_types:[],styles:[]}; docs=[]; scores={};
+  INDICATORS.forEach(i=>scores[i.key]=5);
+  const c=id?DB.find(x=>x.id===id):null;
+  document.getElementById('mTitle').textContent=id?'แก้ไขผู้รับเหมา':'เพิ่มผู้รับเหมา';
+  document.getElementById('delBtn').style.visibility=id?'visible':'hidden';
+
+  const set=(k,v)=>document.getElementById(k).value=v??'';
+  if(c){
+    set('f_name',c.name);set('f_tagline',c.tagline);set('f_province',c.province);set('f_district',c.district);
+    set('f_founded',c.founded_year);set('f_about',c.about);set('f_phone',c.phone);set('f_email',c.email);
+    set('f_capital',c.capital);set('f_bmin',c.budget_min);set('f_bmax',c.budget_max);set('f_team',c.team_size);
+    set('f_eng',c.engineers);set('f_arch',c.architects);set('f_projects',c.projects_done);set('f_reviews',c.review_count);
+    set('f_warranty',c.warranty_years);set('f_rating',c.rating);
+    document.getElementById('f_verified').value=c.verified;document.getElementById('f_status').value=c.status||'active';
+    document.getElementById('f_color').value=c.color||colorOf(c.id);
+    sel.work_types=[...(c.work_types||[])];sel.styles=[...(c.styles||[])];
+    docs=JSON.parse(JSON.stringify(c.documents||[]));
+    scores={...scores,...(c.scores||{})};
+  } else {
+    ['f_name','f_tagline','f_province','f_district','f_founded','f_about','f_phone','f_email','f_capital','f_bmin','f_bmax','f_team','f_eng','f_arch','f_projects','f_reviews','f_warranty','f_rating'].forEach(k=>set(k,''));
+    document.getElementById('f_verified').value='1';document.getElementById('f_status').value='active';
+  }
+  buildChips();buildIndicators();buildDocs();
+  document.getElementById('weightedScore').textContent=weightedScore(scores).toFixed(1);
+  document.querySelectorAll('.mtab')[0].click();
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open');editing=null;}
+
+async function save(){
+  const name=document.getElementById('f_name').value.trim();
+  if(!name){toast('กรุณาระบุชื่อบริษัท');document.querySelectorAll('.mtab')[0].click();return;}
+  const v=k=>document.getElementById(k).value;
+  const n=k=>+document.getElementById(k).value||0;
+  const payload={
+    name, tagline:v('f_tagline'), work_types:sel.work_types, styles:sel.styles,
+    province:v('f_province'), district:v('f_district'), founded_year:n('f_founded'),
+    about:v('f_about'), phone:v('f_phone'), email:v('f_email'),
+    capital:n('f_capital'), budget_min:n('f_bmin'), budget_max:n('f_bmax'),
+    team_size:n('f_team'), engineers:n('f_eng'), architects:n('f_arch'),
+    projects_done:n('f_projects'), review_count:n('f_reviews'), warranty_years:n('f_warranty'),
+    rating:+v('f_rating')||0, verified:+v('f_verified'), status:v('f_status'),
+    documents:docs, scores,
+  };
+  const btn=document.getElementById('saveBtn');btn.textContent='⏳ บันทึก...';btn.disabled=true;
+  try{
+    if(editing) await API.put('/contractors/'+editing,payload);
+    else await API.post('/contractors',payload);
+    toast('บันทึกเรียบร้อย ✓','success');closeModal();await reload();
+  }catch(e){toast(e.message,'error');}
+  btn.textContent='💾 บันทึก';btn.disabled=false;
+}
+async function del(id){
+  if(!confirm('ยืนยันลบผู้รับเหมารายนี้?'))return;
+  await fetch('/api/contractors/'+id,{method:'DELETE'});
+  toast('ลบเรียบร้อย');await reload();
+}
+async function delCurrent(){ if(editing){await del(editing);closeModal();} }
+
+init();
+</script>
+</body>
+</html>

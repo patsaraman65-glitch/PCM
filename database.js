@@ -143,6 +143,80 @@ async function getDb() {
       verified      INTEGER DEFAULT 1,
       created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     );
+
+    -- ═══ PHASE 2 ═══
+
+    -- ข้อเสนอจากผู้รับเหมา (Proposal)
+    CREATE TABLE IF NOT EXISTS proposals (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id    INTEGER NOT NULL,
+      contractor_id INTEGER NOT NULL,
+      price         INTEGER DEFAULT 0,
+      duration_days INTEGER DEFAULT 0,
+      scope         TEXT DEFAULT '',
+      boq           TEXT NOT NULL DEFAULT '[]',   -- JSON [{item,qty,unit,price}]
+      timeline      TEXT NOT NULL DEFAULT '[]',   -- JSON [{phase,weeks}]
+      warranty_years INTEGER DEFAULT 1,
+      version       INTEGER DEFAULT 1,
+      status        TEXT NOT NULL DEFAULT 'submitted',  -- submitted | accepted | rejected
+      created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    );
+
+    -- สัญญา
+    CREATE TABLE IF NOT EXISTS contracts (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id    INTEGER NOT NULL,
+      contractor_id INTEGER NOT NULL,
+      contract_no   TEXT NOT NULL,
+      value         INTEGER DEFAULT 0,
+      duration_days INTEGER DEFAULT 0,
+      start_date    TEXT,
+      scope         TEXT DEFAULT '',
+      payment_terms TEXT NOT NULL DEFAULT '[]',   -- JSON [{label,percent}]
+      signed_owner      INTEGER DEFAULT 0,
+      signed_contractor INTEGER DEFAULT 0,
+      status        TEXT NOT NULL DEFAULT 'draft',  -- draft | active | completed
+      created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    );
+
+    -- งวดงาน / Milestone
+    CREATE TABLE IF NOT EXISTS milestones (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id    INTEGER NOT NULL,
+      name          TEXT NOT NULL,
+      ord           INTEGER DEFAULT 0,
+      percent       INTEGER DEFAULT 0,         -- ความคืบหน้าของ milestone นี้ (0-100)
+      status        TEXT NOT NULL DEFAULT 'pending'  -- pending | progress | done
+    );
+
+    -- การชำระเงิน
+    CREATE TABLE IF NOT EXISTS payments (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id    INTEGER NOT NULL,
+      label         TEXT NOT NULL,
+      amount        INTEGER DEFAULT 0,
+      due_date      TEXT,
+      paid_date     TEXT,
+      status        TEXT NOT NULL DEFAULT 'pending'  -- pending | paid | overdue
+    );
+
+    -- รายการส่งมอบงาน (Handover)
+    CREATE TABLE IF NOT EXISTS handover_items (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id    INTEGER NOT NULL,
+      name          TEXT NOT NULL,
+      status        TEXT NOT NULL DEFAULT 'pending'  -- pending | approved
+    );
+
+    -- รูปหน้างาน
+    CREATE TABLE IF NOT EXISTS site_photos (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id    INTEGER NOT NULL,
+      caption       TEXT DEFAULT '',
+      icon          TEXT DEFAULT '🏗️',
+      period        TEXT DEFAULT '',
+      created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    );
   `);
   persist();
 
@@ -316,8 +390,82 @@ function seedIfEmpty() {
             VALUES (?,?,?,?,?,?,?,?)`, r);
   });
 
+  // ═══ PHASE 2 — seed active engagement ═══
+  // โปรเจกต์ตัวอย่างที่กำลังก่อสร้าง (เลือกผู้รับเหมา = ขจรณ์ id 1)
+  const today = new Date();
+  const iso = d => d.toISOString().slice(0,10);
+  const addD = n => { const d=new Date(today); d.setDate(d.getDate()+n); return iso(d); };
+
+  db.run(`INSERT INTO projects
+    (id,owner_name,work_type,budget_min,budget_max,province,district,lat,lng,style,floors,area,bedrooms,bathrooms,detail,status)
+    VALUES (100,'คุณพัสสรา','สร้างบ้านใหม่',5000000,8000000,'ปทุมธานี','คลองหลวง',14.02,100.52,'Modern',2,320,4,3,'บ้านโมเดิร์น 2 ชั้น พร้อมสระว่ายน้ำ','active')`);
+
+  // ข้อเสนอจาก 3 ผู้รับเหมา (สำหรับ Proposal Review)
+  const boq1 = [
+    {item:'งานฐานราก & เสาเข็ม',qty:1,unit:'งวด',price:850000},
+    {item:'งานโครงสร้าง คสล.',qty:1,unit:'งวด',price:1800000},
+    {item:'งานหลังคา & มุงกระเบื้อง',qty:1,unit:'งวด',price:720000},
+    {item:'งานระบบไฟฟ้า-ประปา',qty:1,unit:'งวด',price:1100000},
+    {item:'งานสถาปัตย์ & ตกแต่ง',qty:1,unit:'งวด',price:2030000},
+  ];
+  const tl1 = [{phase:'ฐานราก',weeks:4},{phase:'โครงสร้าง',weeks:10},{phase:'หลังคา',weeks:4},{phase:'งานระบบ',weeks:6},{phase:'ตกแต่ง',weeks:8}];
+  const proposals = [
+    [100,1,6500000,224,'งานสร้างบ้าน 2 ชั้นครบวงจร พร้อมรับประกันโครงสร้าง 5 ปี',JSON.stringify(boq1),JSON.stringify(tl1),5,1,'accepted'],
+    [100,4,7200000,210,'งานก่อสร้างพร้อมทีมวิศวกร ควบคุมงานเข้มงวด',JSON.stringify(boq1),JSON.stringify(tl1),2,1,'submitted'],
+    [100,3,5900000,245,'เน้นงานตกแต่งภายในระดับพรีเมียม',JSON.stringify(boq1),JSON.stringify(tl1),3,1,'submitted'],
+  ];
+  proposals.forEach(p => db.run(
+    `INSERT INTO proposals (project_id,contractor_id,price,duration_days,scope,boq,timeline,warranty_years,version,status)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`, p));
+
+  // สัญญา (เลือกขจรณ์)
+  const terms = [
+    {label:'งวดที่ 1 — เซ็นสัญญา & เริ่มงานฐานราก',percent:20},
+    {label:'งวดที่ 2 — งานโครงสร้างแล้วเสร็จ',percent:30},
+    {label:'งวดที่ 3 — งานหลังคา & ระบบ',percent:30},
+    {label:'งวดที่ 4 — ส่งมอบงาน',percent:15},
+    {label:'Retention — ประกันผลงาน',percent:5},
+  ];
+  db.run(`INSERT INTO contracts
+    (project_id,contractor_id,contract_no,value,duration_days,start_date,scope,payment_terms,signed_owner,signed_contractor,status)
+    VALUES (100,1,'CT-2026-0100',6500000,224,?, 'งานก่อสร้างบ้านพักอาศัย 2 ชั้น พื้นที่ใช้สอย 320 ตร.ม.',?,1,1,'active')`,
+    [addD(-40), JSON.stringify(terms)]);
+
+  // Milestones (5 งวด มาตรฐาน)
+  const ms = [
+    ['งานฐานราก',1,100,'done'],
+    ['งานโครงสร้าง',2,100,'done'],
+    ['งานหลังคา',3,60,'progress'],
+    ['งานระบบ',4,0,'pending'],
+    ['งานตกแต่ง',5,0,'pending'],
+  ];
+  ms.forEach(m => db.run(`INSERT INTO milestones (project_id,name,ord,percent,status) VALUES (100,?,?,?,?)`, m));
+
+  // Payments
+  const pays = [
+    ['งวดที่ 1 — เซ็นสัญญา & ฐานราก',1300000,addD(-40),addD(-38),'paid'],
+    ['งวดที่ 2 — งานโครงสร้าง',1950000,addD(-10),addD(-8),'paid'],
+    ['งวดที่ 3 — งานหลังคา & ระบบ',1950000,addD(7),null,'pending'],
+    ['งวดที่ 4 — ส่งมอบงาน',975000,addD(60),null,'pending'],
+    ['Retention — ประกันผลงาน',325000,addD(90),null,'pending'],
+  ];
+  pays.forEach(p => db.run(`INSERT INTO payments (project_id,label,amount,due_date,paid_date,status) VALUES (100,?,?,?,?,?)`, p));
+
+  // Handover checklist
+  ['As-Built Drawing','คู่มือการใช้งานอุปกรณ์','เอกสารรับประกันงาน','รายการตรวจรับงาน (Defect List)','เอกสารรับรองความปลอดภัย']
+    .forEach((n,i)=> db.run(`INSERT INTO handover_items (project_id,name,status) VALUES (100,?,?)`, [n, i<2?'approved':'pending']));
+
+  // Site photos
+  const photos = [
+    ['เทคอนกรีตฐานราก','🏗️','สัปดาห์ที่ 3'],
+    ['งานเสา-คาน ชั้น 1','🧱','สัปดาห์ที่ 8'],
+    ['โครงสร้างชั้น 2','🏢','สัปดาห์ที่ 12'],
+    ['ติดตั้งโครงหลังคา','🔨','สัปดาห์ที่ 16'],
+  ];
+  photos.forEach(p => db.run(`INSERT INTO site_photos (project_id,caption,icon,period) VALUES (100,?,?,?)`, p));
+
   persist();
-  console.log('✅ Seeded contractors, portfolios, reviews');
+  console.log('✅ Seeded contractors, portfolios, reviews + Phase 2 engagement');
 }
 
 // ════════════════════════════════════════════════════════════════

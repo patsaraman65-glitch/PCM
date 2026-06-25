@@ -5,9 +5,11 @@
 // ── API client ──────────────────────────────────────────────
 const API = {
   async get(path)        { return (await fetch('/api'+path)).json(); },
-  async post(path, body) {
+  async post(path, body) { return this._send('POST', path, body); },
+  async put(path, body)  { return this._send('PUT',  path, body); },
+  async _send(method, path, body) {
     const r = await fetch('/api'+path, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method, headers:{'Content-Type':'application/json'},
       body: JSON.stringify(body)
     });
     if (!r.ok) throw new Error((await r.json()).error || 'error');
@@ -62,6 +64,7 @@ function renderNav(active='') {
     {href:'/create-project',  label:'สร้างโปรเจกต์',   key:'create'},
     {href:'/results',         label:'ผลการจับคู่',     key:'results'},
     {href:'/compare',         label:'เปรียบเทียบ',     key:'compare'},
+    {href:'/dashboard',       label:'โปรเจกต์ของฉัน',  key:'dashboard'},
     {href:'/chat',            label:'ข้อความ',         key:'chat'},
   ];
   return `

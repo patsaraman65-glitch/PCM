@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>เปรียบเทียบข้อเสนอ — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+.pr-wrap{max-width:1200px;margin:0 auto;padding:28px 24px 80px}
+.pr-head{margin-bottom:22px}
+.pr-head h1{font-size:24px;font-weight:800;color:var(--ink)}
+.pr-head p{color:var(--muted);margin-top:4px}
+
+.prop-grid{display:grid;gap:18px}
+.prop{padding:0;overflow:hidden}
+.prop-top{padding:18px 20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line)}
+.prop.best .prop-top{background:var(--primary-50)}
+.prop-avatar{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0}
+.prop-name{flex:1;min-width:0}
+.prop-name strong{font-size:15px;display:block}
+.prop-name span{font-size:12.5px;color:var(--muted)}
+.prop-price{text-align:right}
+.prop-price b{font-size:24px;font-weight:800;font-family:'Inter';color:var(--primary)}
+.prop-price span{font-size:11px;color:var(--muted);display:block}
+.prop-body{padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.prop-meta{display:flex;gap:20px;flex-wrap:wrap;font-size:13px;margin-bottom:12px}
+.prop-meta .m b{font-family:'Inter';color:var(--ink)}
+.prop-meta .m span{color:var(--muted)}
+.boq-table{width:100%;border-collapse:collapse;font-size:13px}
+.boq-table th{text-align:left;font-size:11px;color:var(--muted);padding:6px 8px;background:var(--bg);font-weight:600}
+.boq-table td{padding:7px 8px;border-bottom:1px solid var(--line-lt)}
+.boq-table td:last-child{text-align:right;font-family:'Inter';font-weight:600}
+.boq-total{display:flex;justify-content:space-between;padding:10px 8px;font-weight:700;border-top:2px solid var(--line);margin-top:4px}
+.timeline-mini{display:flex;gap:4px;margin-top:8px}
+.tl-seg{flex:1;text-align:center}
+.tl-bar{height:8px;border-radius:4px;background:var(--primary-light)}
+.tl-seg span{font-size:10px;color:var(--muted);display:block;margin-top:4px}
+.prop-actions{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:var(--bg)}
+.section-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.accepted-banner{background:#ecfdf5;border:1px solid #6ee7b7;color:#059669;padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;display:inline-flex;gap:6px;align-items:center}
+@media(max-width:760px){.prop-body{grid-template-columns:1fr}}
+</style>
+</head>
+<body data-page="dashboard">
+<div id="nav"></div>
+<div class="pr-wrap">
+  <div class="pr-head">
+    <h1>📋 เปรียบเทียบข้อเสนอ (Proposal Review)</h1>
+    <p>ตรวจสอบและเปรียบเทียบข้อเสนอ ราคา BOQ และระยะเวลาจากผู้รับเหมา</p>
+  </div>
+  <div class="prop-grid" id="grid"></div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+const PID = 100;
+async function load(){
+  const props = await API.get('/projects/'+PID+'/proposals');
+  const minPrice = Math.min(...props.map(p=>p.price));
+  document.getElementById('grid').innerHTML = props.map(p=>{
+    const c=p.contractor, col=colorOf(c.id);
+    const boqTotal=p.boq.reduce((s,b)=>s+b.price,0);
+    const totalWeeks=p.timeline.reduce((s,t)=>s+t.weeks,0);
+    const isAccepted=p.status==='accepted';
+    return `<div class="card prop ${p.price===minPrice?'best':''}">
+      <div class="prop-top">
+        <div class="prop-avatar" style="background:${col}">${initials(c.name)}</div>
+        <div class="prop-name"><strong>${c.name} ${p.price===minPrice?'<span class="badge badge-blue">ราคาดีสุด</span>':''}</strong>
+          <span>${stars(c.rating)} ${c.rating} · รับประกัน ${p.warranty_years} ปี · เวอร์ชัน ${p.version}</span></div>
+        <div class="prop-price"><b>${fmtMoney(p.price)}</b><span>บาท</span></div>
+      </div>
+      <div class="prop-body">
+        <div>
+          <div class="section-label">📑 รายการประเมินราคา (BOQ)</div>
+          <table class="boq-table"><thead><tr><th>รายการ</th><th style="text-align:right">ราคา</th></tr></thead>
+            <tbody>${p.boq.map(b=>`<tr><td>${b.item}</td><td>${Number(b.price).toLocaleString('th-TH')}</td></tr>`).join('')}</tbody></table>
+          <div class="boq-total"><span>รวม</span><span class="num">${Number(boqTotal).toLocaleString('th-TH')} บ.</span></div>
+        </div>
+        <div>
+          <div class="section-label">🎯 ขอบเขตงาน (Scope)</div>
+          <p style="font-size:13.5px;color:var(--text);margin-bottom:14px">${p.scope}</p>
+          <div class="prop-meta">
+            <div class="m"><span>ระยะเวลา</span><br><b>${p.duration_days} วัน</b> (~${totalWeeks} สัปดาห์)</div>
+            <div class="m"><span>รับประกัน</span><br><b>${p.warranty_years} ปี</b></div>
+          </div>
+          <div class="section-label">📅 ไทม์ไลน์</div>
+          <div class="timeline-mini">
+            ${p.timeline.map(t=>`<div class="tl-seg"><div class="tl-bar" style="opacity:${.5+t.weeks/totalWeeks}"></div><span>${t.phase}<br>${t.weeks}w</span></div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="prop-actions">
+        ${isAccepted?'<span class="accepted-banner">✓ เลือกข้อเสนอนี้แล้ว</span>':`
+          <button class="btn btn-ghost btn-sm" onclick="toast('กำลังดาวน์โหลดเอกสาร PDF')">⬇ ดาวน์โหลด</button>
+          <button class="btn btn-soft btn-sm" onclick="toast('เปิดดูเอกสารฉบับเต็ม')">👁 ดูเอกสาร</button>
+          <button class="btn btn-primary btn-sm" onclick="accept(${p.id})">เลือกข้อเสนอนี้</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+async function accept(id){
+  if(!confirm('ยืนยันเลือกข้อเสนอนี้? ระบบจะดำเนินการสร้างสัญญาต่อไป'))return;
+  await API.post('/proposals/'+id+'/accept',{});
+  toast('เลือกข้อเสนอเรียบร้อย ✓','success');
+  load();
+  setTimeout(()=>location.href='/contract', 1200);
+}
+load();
+</script>
+</body>
+</html>

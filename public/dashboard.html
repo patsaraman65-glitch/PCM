@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>โปรเจกต์ของฉัน — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+.dash-wrap{max-width:1200px;margin:0 auto;padding:28px 24px 80px}
+/* project header */
+.dh{background:var(--grad);border-radius:var(--r-xl);padding:28px 30px;color:#fff;position:relative;overflow:hidden;box-shadow:var(--sh-blue);margin-bottom:24px}
+.dh::after{content:'🏗️';position:absolute;right:28px;top:50%;transform:translateY(-50%);font-size:90px;opacity:.16}
+.dh-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.dh h1{font-size:24px;font-weight:800}
+.dh-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.dh-tag{background:rgba(255,255,255,.18);padding:5px 13px;border-radius:20px;font-size:13px}
+.dh-progress{margin-top:20px;max-width:560px}
+.dh-progress-bar{height:12px;background:rgba(255,255,255,.25);border-radius:8px;overflow:hidden;margin-top:6px}
+.dh-progress-fill{height:100%;background:#fff;border-radius:8px;transition:width .8s}
+
+/* quick actions */
+.qa-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:26px}
+.qa{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px 14px;text-align:center;cursor:pointer;transition:all .2s;text-decoration:none}
+.qa:hover{transform:translateY(-4px);box-shadow:var(--sh);border-color:var(--primary-100)}
+.qa-ico{width:48px;height:48px;border-radius:13px;background:var(--primary-50);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px}
+.qa strong{display:block;font-size:13.5px;color:var(--ink)}
+.qa span{font-size:11.5px;color:var(--muted)}
+.qa-badge{display:inline-block;margin-top:5px;font-size:10px;padding:1px 8px;border-radius:10px;font-weight:600}
+
+.dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:24px}
+.panel{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;box-shadow:var(--sh-sm);margin-bottom:24px}
+.panel h3{font-size:17px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:9px}
+
+/* milestones timeline */
+.ms{display:flex;gap:14px;padding:12px 0;align-items:flex-start}
+.ms-dot{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700;position:relative}
+.ms-dot.done{background:var(--green)}.ms-dot.progress{background:var(--amber)}.ms-dot.pending{background:var(--line);color:var(--muted)}
+.ms-line{position:absolute;top:32px;left:15px;width:2px;height:30px;background:var(--line)}
+.ms:last-child .ms-line{display:none}
+.ms-body{flex:1}
+.ms-body strong{font-size:14.5px}
+.ms-bar{height:6px;background:var(--bg-soft);border-radius:3px;margin-top:6px;overflow:hidden}
+.ms-bar-fill{height:100%;border-radius:3px}
+.ms-pct{font-size:12px;font-weight:700;font-family:'Inter';color:var(--muted)}
+
+/* photos */
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.photo{border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+.photo-img{height:90px;display:flex;align-items:center;justify-content:center;font-size:34px;background:var(--primary-50)}
+.photo-cap{padding:9px 12px}
+.photo-cap strong{font-size:12.5px;display:block}
+.photo-cap span{font-size:11px;color:var(--muted)}
+
+.mini-stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line-lt);font-size:14px}
+.mini-stat:last-child{border:none}
+.mini-stat b{font-family:'Inter'}
+@media(max-width:900px){.dash-grid{grid-template-columns:1fr}.qa-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body data-page="dashboard">
+<div id="nav"></div>
+<div class="dash-wrap" id="wrap"><div style="text-align:center;padding:80px"><div class="spinner" style="margin:0 auto"></div></div></div>
+
+<script src="/js/common.js"></script>
+<script>
+(async () => {
+  const w = await API.get('/workspace');
+  const p=w.project, c=w.contractor;
+  const col = c?colorOf(c.id):'#2563eb';
+  const paidCount=w.payments.filter(x=>x.status==='paid').length;
+  const paidAmt=w.payments.filter(x=>x.status==='paid').reduce((s,x)=>s+x.amount,0);
+  const totalAmt=w.payments.reduce((s,x)=>s+x.amount,0);
+  const hoDone=w.handover.filter(h=>h.status==='approved').length;
+
+  document.getElementById('wrap').innerHTML = `
+    <div class="dh">
+      <div class="dh-top"><span class="badge" style="background:rgba(255,255,255,.9);color:var(--primary)">● กำลังก่อสร้าง</span></div>
+      <h1>${p.detail||p.work_type}</h1>
+      <div class="dh-tags">
+        <span class="dh-tag">🏗 ${p.work_type}</span>
+        <span class="dh-tag">📐 ${p.area} ตร.ม.</span>
+        <span class="dh-tag">📍 ${p.province}</span>
+        ${c?`<span class="dh-tag">👷 ${c.name}</span>`:''}
+      </div>
+      <div class="dh-progress">
+        <div class="flex justify-between" style="font-size:13px"><span>ความคืบหน้าโดยรวม</span><b class="num">${w.overall}%</b></div>
+        <div class="dh-progress-bar"><div class="dh-progress-fill" style="width:${w.overall}%"></div></div>
+      </div>
+    </div>
+
+    <div class="qa-grid">
+      <a class="qa" href="/proposals"><div class="qa-ico">📋</div><strong>ข้อเสนอ</strong><span>เปรียบเทียบ BOQ</span></a>
+      <a class="qa" href="/contract"><div class="qa-ico">📜</div><strong>สัญญา</strong>
+        <span class="qa-badge ${w.contract?.status==='active'?'badge-green':'badge-amber'}">${w.contract?.status==='active'?'มีผลแล้ว':'ร่าง'}</span></a>
+      <a class="qa" href="/payments"><div class="qa-ico">💳</div><strong>การชำระเงิน</strong>
+        <span class="qa-badge badge-blue">${paidCount}/${w.payments.length} งวด</span></a>
+      <a class="qa" href="/handover"><div class="qa-ico">📦</div><strong>ส่งมอบงาน</strong>
+        <span class="qa-badge badge-gray">${hoDone}/${w.handover.length}</span></a>
+      <a class="qa" href="/review"><div class="qa-ico">⭐</div><strong>รีวิว</strong><span>ให้คะแนน</span></a>
+    </div>
+
+    <div class="dash-grid">
+      <div>
+        <div class="panel">
+          <h3>🚧 ความคืบหน้างาน (Milestones)</h3>
+          ${w.milestones.map(m=>{
+            const cl=m.status, fill=m.status==='done'?'var(--green)':m.status==='progress'?'var(--amber)':'var(--line)';
+            return `<div class="ms">
+              <div class="ms-dot ${cl}">${m.status==='done'?'✓':m.ord}<div class="ms-line"></div></div>
+              <div class="ms-body">
+                <div class="flex justify-between"><strong>${m.name}</strong><span class="ms-pct">${m.percent}%</span></div>
+                <div class="ms-bar"><div class="ms-bar-fill" style="width:${m.percent}%;background:${fill}"></div></div>
+              </div></div>`;
+          }).join('')}
+        </div>
+
+        <div class="panel">
+          <h3>📸 รูปหน้างาน</h3>
+          <div class="photo-grid">
+            ${w.photos.map(ph=>`<div class="photo">
+              <div class="photo-img">${ph.icon}</div>
+              <div class="photo-cap"><strong>${ph.caption}</strong><span>${ph.period}</span></div></div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <h3>👷 ผู้รับเหมา</h3>
+          ${c?`<div class="flex gap-3 items-center" style="margin-bottom:14px">
+            <div style="width:50px;height:50px;border-radius:13px;background:${col};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">${initials(c.name)}</div>
+            <div><strong style="font-size:14.5px">${c.name}</strong><div style="font-size:12px;color:var(--muted)">${stars(c.rating)} ${c.rating} · ${c.phone}</div></div>
+          </div>
+          <a class="btn btn-soft btn-block btn-sm" href="/chat?c=${c.id}">💬 ส่งข้อความ</a>`:''}
+        </div>
+
+        <div class="panel">
+          <h3>💰 สรุปการเงิน</h3>
+          <div class="mini-stat"><span>มูลค่าสัญญา</span><b>${fmtMoney(w.contract?.value)} บ.</b></div>
+          <div class="mini-stat"><span>ชำระแล้ว</span><b style="color:var(--green)">${fmtMoney(paidAmt)} บ.</b></div>
+          <div class="mini-stat"><span>คงเหลือ</span><b style="color:var(--amber)">${fmtMoney(totalAmt-paidAmt)} บ.</b></div>
+          <div class="mini-stat"><span>สถานะงวด</span><b>${paidCount}/${w.payments.length} งวด</b></div>
+          <a class="btn btn-primary btn-block btn-sm mt-4" href="/payments">ดูรายละเอียดการชำระ →</a>
+        </div>
+      </div>
+    </div>`;
+})();
+</script>
+</body>
+</html>

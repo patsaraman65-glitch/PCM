@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ให้คะแนนรีวิว — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+.rv-wrap{max-width:640px;margin:0 auto;padding:32px 24px 80px}
+.rv-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--sh);padding:34px}
+.rv-title{font-size:24px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.rv-sub{color:var(--muted);margin-bottom:22px}
+.rv-contractor{display:flex;align-items:center;gap:14px;padding:14px;background:var(--bg);border-radius:var(--r);margin-bottom:24px}
+.rvc-avatar{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+.rate-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line-lt)}
+.rate-label{font-size:15px;font-weight:500}
+.rate-stars{display:flex;gap:6px}
+.rate-star{font-size:28px;color:var(--line);cursor:pointer;transition:all .12s;line-height:1}
+.rate-star:hover{transform:scale(1.15)}
+.rate-star.on{color:#f59e0b}
+.overall-box{display:flex;align-items:center;justify-content:space-between;padding:18px;background:linear-gradient(135deg,var(--primary-50),#eef2ff);border-radius:var(--r);margin:20px 0}
+.overall-box .lbl{font-size:15px;font-weight:700;color:var(--ink)}
+.overall-val{display:flex;align-items:center;gap:10px}
+.overall-val b{font-size:32px;font-weight:800;font-family:'Inter';color:var(--primary)}
+/* success */
+.rv-success{text-align:center;padding:14px}
+.rv-success .ico{width:80px;height:80px;border-radius:50%;background:#fffbeb;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 16px}
+</style>
+</head>
+<body data-page="dashboard">
+<div id="nav"></div>
+<div class="rv-wrap"><div class="rv-card" id="card"><div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div></div></div>
+
+<script src="/js/common.js"></script>
+<script>
+const PID=100;
+const CATS=[
+  {k:'quality',l:'คุณภาพงาน'},
+  {k:'punctuality',l:'ความตรงต่อเวลา'},
+  {k:'communication',l:'การสื่อสาร'},
+  {k:'value',l:'ความคุ้มค่า'},
+];
+let scores={quality:0,punctuality:0,communication:0,value:0};
+let contractor=null;
+
+(async()=>{
+  const w=await API.get('/workspace/'+PID);
+  contractor=w.contractor;
+  render();
+})();
+
+function render(){
+  const col=colorOf(contractor.id);
+  document.getElementById('card').innerHTML=`
+    <div class="rv-title">⭐ ให้คะแนนรีวิว</div>
+    <div class="rv-sub">แบ่งปันประสบการณ์ของคุณหลังรับมอบงาน</div>
+    <div class="rv-contractor">
+      <div class="rvc-avatar" style="background:${col}">${initials(contractor.name)}</div>
+      <div><strong style="font-size:15px">${contractor.name}</strong><div style="font-size:13px;color:var(--muted)">โครงการบ้านโมเดิร์น 2 ชั้น</div></div>
+    </div>
+    ${CATS.map(c=>`<div class="rate-row">
+      <div class="rate-label">${c.l}</div>
+      <div class="rate-stars" id="stars_${c.k}">
+        ${[1,2,3,4,5].map(n=>`<span class="rate-star" onclick="setScore('${c.k}',${n})" data-n="${n}">★</span>`).join('')}
+      </div></div>`).join('')}
+    <div class="overall-box">
+      <div class="lbl">ความพึงพอใจโดยรวม</div>
+      <div class="overall-val">${stars(0)}<b id="overallVal">0.0</b></div>
+    </div>
+    <div class="field"><label>ความคิดเห็นเพิ่มเติม</label>
+      <textarea class="textarea" id="comment" placeholder="เล่าประสบการณ์การทำงานร่วมกับผู้รับเหมารายนี้"></textarea></div>
+    <button class="btn btn-primary btn-block btn-lg" onclick="submit()" id="sb">ส่งรีวิว</button>`;
+}
+function setScore(k,n){
+  scores[k]=n;
+  document.querySelectorAll('#stars_'+k+' .rate-star').forEach(s=>s.classList.toggle('on', +s.dataset.n<=n));
+  const vals=Object.values(scores).filter(v=>v>0);
+  const avg=vals.length?(Object.values(scores).reduce((a,b)=>a+b,0)/4):0;
+  document.getElementById('overallVal').textContent=avg.toFixed(1);
+  document.querySelector('.overall-val .stars').outerHTML=stars(avg);
+}
+async function submit(){
+  if(Object.values(scores).some(v=>v===0)){toast('กรุณาให้คะแนนครบทุกหัวข้อ');return;}
+  const btn=document.getElementById('sb'); btn.textContent='⏳ กำลังส่ง...'; btn.disabled=true;
+  try{
+    const r=await API.post('/reviews',{contractor_id:contractor.id, author:'คุณพัสสรา', ...scores, comment:document.getElementById('comment').value});
+    document.getElementById('card').innerHTML=`
+      <div class="rv-success">
+        <div class="ico">🌟</div>
+        <h2 style="font-size:22px;font-weight:800">ขอบคุณสำหรับรีวิว!</h2>
+        <p style="color:var(--muted);margin:8px 0 14px">รีวิวของคุณช่วยให้เจ้าของบ้านคนอื่นตัดสินใจได้ดีขึ้น</p>
+        <div style="font-size:14px">${stars(r.overall)} <b class="num">${r.overall}</b></div>
+        <div class="mt-2"><span class="badge badge-verified">✓ Verified Review — ยืนยันจากโครงการจริง</span></div>
+        <div class="mt-6 flex gap-3" style="justify-content:center">
+          <a class="btn btn-ghost" href="/dashboard">กลับ Dashboard</a>
+          <a class="btn btn-primary" href="/profile?id=${contractor.id}">ดูโปรไฟล์ผู้รับเหมา →</a>
+        </div>
+      </div>`;
+  }catch(e){ toast(e.message,'error'); btn.textContent='ส่งรีวิว'; btn.disabled=false; }
+}
+</script>
+</body>
+</html>

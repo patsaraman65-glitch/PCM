@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>การชำระเงิน — PCM</title>
+<link rel="stylesheet" href="/css/styles.css"/>
+<style>
+.pay-wrap{max-width:900px;margin:0 auto;padding:28px 24px 80px}
+.pay-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.pay-head h1{font-size:24px;font-weight:800;color:var(--ink)}
+/* summary */
+.pay-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.psum{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;box-shadow:var(--sh-sm)}
+.psum span{font-size:13px;color:var(--muted)}
+.psum b{display:block;font-size:26px;font-weight:800;font-family:'Inter';margin-top:4px}
+.psum-bar{height:8px;background:var(--bg-soft);border-radius:4px;margin-top:12px;overflow:hidden}
+.psum-fill{height:100%;background:var(--green);border-radius:4px;transition:width .8s}
+/* installments */
+.inst{display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:12px;box-shadow:var(--sh-sm);transition:all .2s}
+.inst.paid{border-left:4px solid var(--green)}
+.inst.pending{border-left:4px solid var(--amber)}
+.inst.overdue{border-left:4px solid var(--rose)}
+.inst-num{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:'Inter';font-size:16px;flex-shrink:0}
+.inst-num.paid{background:#ecfdf5;color:var(--green)}
+.inst-num.pending{background:#fffbeb;color:var(--amber)}
+.inst-num.overdue{background:#fef2f2;color:var(--rose)}
+.inst-info{flex:1;min-width:0}
+.inst-info strong{font-size:14.5px;display:block}
+.inst-info .dates{font-size:12.5px;color:var(--muted);margin-top:3px}
+.inst-amt{text-align:right}
+.inst-amt b{font-size:18px;font-weight:800;font-family:'Inter';color:var(--ink)}
+.inst-action{min-width:120px;text-align:right}
+@media(max-width:640px){.pay-summary{grid-template-columns:1fr}.inst{flex-wrap:wrap}.inst-action{min-width:100%;text-align:left;margin-top:8px}}
+</style>
+</head>
+<body data-page="dashboard">
+<div id="nav"></div>
+<div class="pay-wrap" id="wrap"><div style="text-align:center;padding:80px"><div class="spinner" style="margin:0 auto"></div></div></div>
+
+<script src="/js/common.js"></script>
+<script>
+const PID=100;
+const todayStr=new Date().toISOString().slice(0,10);
+async function load(){
+  const w = await API.get('/workspace/'+PID);
+  const pays = w.payments.map(p=>({...p, status: p.status==='pending' && p.due_date<todayStr ? 'overdue' : p.status}));
+  const total=pays.reduce((s,p)=>s+p.amount,0);
+  const paid=pays.filter(p=>p.status==='paid').reduce((s,p)=>s+p.amount,0);
+  const overdue=pays.filter(p=>p.status==='overdue').reduce((s,p)=>s+p.amount,0);
+
+  document.getElementById('wrap').innerHTML=`
+    <div class="pay-head"><h1>💳 ติดตามการชำระเงิน</h1><a class="btn btn-soft btn-sm" href="/dashboard">← กลับ Dashboard</a></div>
+    <div class="pay-summary">
+      <div class="psum"><span>มูลค่าสัญญารวม</span><b class="num" style="color:var(--ink)">${fmtMoney(total)}</b>
+        <div class="psum-bar"><div class="psum-fill" style="width:${paid/total*100}%"></div></div>
+        <span class="num" style="font-size:11px">ชำระแล้ว ${Math.round(paid/total*100)}%</span></div>
+      <div class="psum"><span>ชำระแล้ว</span><b class="num" style="color:var(--green)">${fmtMoney(paid)}</b>
+        <span class="num" style="font-size:12px;color:var(--muted)">${pays.filter(p=>p.status==='paid').length} งวด</span></div>
+      <div class="psum"><span>ค้างชำระ / คงเหลือ</span><b class="num" style="color:var(--amber)">${fmtMoney(total-paid)}</b>
+        ${overdue?`<span class="num" style="font-size:12px;color:var(--rose)">เกินกำหนด ${fmtMoney(overdue)}</span>`:`<span style="font-size:12px;color:var(--muted)">ไม่มีงวดเกินกำหนด</span>`}</div>
+    </div>
+
+    ${pays.map((p,i)=>{
+      const badge=p.status==='paid'?'<span class="badge badge-green">✓ ชำระแล้ว</span>'
+        :p.status==='overdue'?'<span class="badge" style="background:#fef2f2;color:var(--rose)">⚠ เกินกำหนด</span>'
+        :'<span class="badge badge-amber">⏳ รอชำระ</span>';
+      return `<div class="inst ${p.status}">
+        <div class="inst-num ${p.status}">${i+1}</div>
+        <div class="inst-info"><strong>${p.label}</strong>
+          <div class="dates">📅 ครบกำหนด ${p.due_date||'-'}${p.paid_date?` · ✓ ชำระ ${p.paid_date}`:''}</div></div>
+        <div class="inst-amt"><b>${Number(p.amount).toLocaleString('th-TH')}</b><div style="font-size:11px;color:var(--muted)">บาท</div></div>
+        <div class="inst-action">${p.status==='paid'?badge:`${badge}<br><button class="btn btn-primary btn-sm mt-2" onclick="pay(${p.id})">ชำระเงิน</button>`}</div>
+      </div>`;
+    }).join('')}`;
+}
+async function pay(id){
+  if(!confirm('ยืนยันการชำระเงินงวดนี้?'))return;
+  await API.post('/payments/'+id+'/pay',{});
+  toast('บันทึกการชำระเงินเรียบร้อย ✓','success'); load();
+}
+load();
+</script>
+</body>
+</html>

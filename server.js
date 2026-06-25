@@ -224,8 +224,86 @@ dbModule.getDb().then(() => {
     res.status(201).json(get('SELECT * FROM reviews WHERE id=?', [r.lastInsertRowid]));
   });
 
+  // ════════════════════════════════════════════════════════════
+  //  PHASE 2 API
+  // ════════════════════════════════════════════════════════════
+  const DEMO_PROJECT = 100;  // โปรเจกต์ active สำหรับ demo
+
+  // ── WORKSPACE (dashboard hub) ────────────────────────────────
+  app.get('/api/workspace/:projectId?', (req, res) => {
+    const pid = req.params.projectId || DEMO_PROJECT;
+    const project = get('SELECT * FROM projects WHERE id=?', [pid]);
+    if (!project) return res.status(404).json({ error: 'ไม่พบโปรเจกต์' });
+    const contract = get('SELECT * FROM contracts WHERE project_id=?', [pid]);
+    const contractor = contract ? hydrate(get('SELECT * FROM contractors WHERE id=?', [contract.contractor_id])) : null;
+    const milestones = all('SELECT * FROM milestones WHERE project_id=? ORDER BY ord', [pid]);
+    const payments   = all('SELECT * FROM payments WHERE project_id=? ORDER BY id', [pid]);
+    const handover   = all('SELECT * FROM handover_items WHERE project_id=? ORDER BY id', [pid]);
+    const photos     = all('SELECT * FROM site_photos WHERE project_id=? ORDER BY id', [pid]);
+    const overall = milestones.length ? Math.round(milestones.reduce((s,m)=>s+m.percent,0)/milestones.length) : 0;
+    res.json({
+      project:{...project, files:J(project.files)},
+      contract: contract ? {...contract, payment_terms:J(contract.payment_terms)} : null,
+      contractor, milestones, payments, handover, photos, overall,
+    });
+  });
+
+  // ── PROPOSALS ────────────────────────────────────────────────
+  app.get('/api/projects/:id/proposals', (req, res) => {
+    const rows = all('SELECT * FROM proposals WHERE project_id=? ORDER BY price', [req.params.id]).map(p => ({
+      ...p, boq:J(p.boq), timeline:J(p.timeline),
+      contractor: hydrate(get('SELECT * FROM contractors WHERE id=?', [p.contractor_id])),
+    }));
+    res.json(rows);
+  });
+  app.post('/api/proposals/:id/accept', (req, res) => {
+    const p = get('SELECT * FROM proposals WHERE id=?', [req.params.id]);
+    if (!p) return res.status(404).json({ error: 'ไม่พบข้อเสนอ' });
+    run('UPDATE proposals SET status=? WHERE project_id=?', ['submitted', p.project_id]);
+    run('UPDATE proposals SET status=? WHERE id=?', ['accepted', p.id]);
+    res.json({ success: true });
+  });
+
+  // ── CONTRACTS ────────────────────────────────────────────────
+  app.get('/api/contracts/:projectId', (req, res) => {
+    const c = get('SELECT * FROM contracts WHERE project_id=?', [req.params.projectId]);
+    if (!c) return res.status(404).json({ error: 'ยังไม่มีสัญญา' });
+    c.payment_terms = J(c.payment_terms);
+    c.contractor = hydrate(get('SELECT * FROM contractors WHERE id=?', [c.contractor_id]));
+    c.project = get('SELECT * FROM projects WHERE id=?', [c.project_id]);
+    res.json(c);
+  });
+  app.post('/api/contracts/:id/sign', (req, res) => {
+    const who = req.body.who === 'contractor' ? 'signed_contractor' : 'signed_owner';
+    run(`UPDATE contracts SET ${who}=1 WHERE id=?`, [req.params.id]);
+    const c = get('SELECT * FROM contracts WHERE id=?', [req.params.id]);
+    if (c.signed_owner && c.signed_contractor) run(`UPDATE contracts SET status='active' WHERE id=?`, [c.id]);
+    res.json(get('SELECT * FROM contracts WHERE id=?', [req.params.id]));
+  });
+
+  // ── MILESTONES ───────────────────────────────────────────────
+  app.put('/api/milestones/:id', (req, res) => {
+    const { percent } = req.body;
+    const status = percent>=100 ? 'done' : percent>0 ? 'progress' : 'pending';
+    run('UPDATE milestones SET percent=?, status=? WHERE id=?', [percent, status, req.params.id]);
+    res.json(get('SELECT * FROM milestones WHERE id=?', [req.params.id]));
+  });
+
+  // ── PAYMENTS ─────────────────────────────────────────────────
+  app.post('/api/payments/:id/pay', (req, res) => {
+    run(`UPDATE payments SET status='paid', paid_date=date('now','localtime') WHERE id=?`, [req.params.id]);
+    res.json(get('SELECT * FROM payments WHERE id=?', [req.params.id]));
+  });
+
+  // ── HANDOVER ─────────────────────────────────────────────────
+  app.put('/api/handover/:id', (req, res) => {
+    run('UPDATE handover_items SET status=? WHERE id=?', [req.body.status||'approved', req.params.id]);
+    res.json(get('SELECT * FROM handover_items WHERE id=?', [req.params.id]));
+  });
+
   // ── PAGE ROUTES (clean URLs) ─────────────────────────────────
-  const pages = ['create-project','results','profile','compare','rfq','meeting','chat'];
+  const pages = ['create-project','results','profile','compare','rfq','meeting','chat',
+                 'dashboard','proposals','contract','payments','handover','review'];
   app.get('/', (req,res)=> res.sendFile(path.join(PUBLIC,'index.html')));
   pages.forEach(p => app.get('/'+p, (req,res)=> res.sendFile(path.join(PUBLIC, p+'.html'))));
 
